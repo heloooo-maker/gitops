@@ -1,0 +1,21 @@
+# Application "root" -> vi du App-of-Apps: theo doi chinh folder bootstrap/ nay
+# Sync Policy: MANUAL (co tinh) - de nguoi dung tu bam Sync sau khi xem ky Diff,
+# tranh tu dong "nhan vo" lai 2 Application dang chay that (freelance-agency, platform)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd-thanhlam
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/heloooo-maker/gitops.git
+    targetRevision: main
+    path: "platform/bootstrap"
+    directory:
+      recurse: true
+      exclude: "root-application.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd-thanhlam
+  syncPolicy: {}
