@@ -1,4 +1,4 @@
-# Application "platform" -> theo dõi folder platform/ trong repo freelance-agency-gitops (đã gộp chung 1 repo)
+# Application "platform" -> theo dõi folder platform/ trong repo gitops (đã gộp chung 1 repo)
 # LƯU Ý: file này CHỈ để lưu trữ/tham khảo, không được ArgoCD tự sync
 # (bootstrap object - self-referential, phải tạo bằng tay 1 lần đầu qua kubectl apply)
 apiVersion: argoproj.io/v1alpha1
@@ -9,7 +9,7 @@ metadata:
 spec:
   project: platform
   source:
-    repoURL: https://github.com/heloooo-maker/freelance-agency-gitops.git
+    repoURL: https://github.com/heloooo-maker/gitops.git
     targetRevision: main
     path: "platform"
     directory:

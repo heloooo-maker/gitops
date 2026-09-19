@@ -8,7 +8,7 @@ metadata:
 spec:
   description: "App freelance-agency-template - chi duoc trong repo va namespace rieng cua no"
   sourceRepos:
-    - https://github.com/heloooo-maker/freelance-agency-gitops.git
+    - https://github.com/heloooo-maker/gitops.git
   destinations:
     - namespace: lab2
       server: https://kubernetes.default.svc
