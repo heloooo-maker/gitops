@@ -1,0 +1,17 @@
+# AppProject "platform" -> giới hạn phạm vi cho Application "platform"
+# LƯU Ý: file này CHỈ để lưu trữ/tham khảo, không được ArgoCD tự sync
+# (bootstrap object - phải tạo bằng tay 1 lần trước khi Application "platform" tồn tại được)
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: argocd-thanhlam
+spec:
+  description: "Ha tang dung chung (ArgoCD ingress, ClusterIssuer, cloudflared) - tach rieng khoi app de tranh cascade-delete lan nhau"
+  sourceRepos:
+    - https://github.com/heloooo-maker/freelance-agency-gitops.git
+  destinations:
+    - namespace: argocd-thanhlam
+      server: https://kubernetes.default.svc
+    - namespace: tunnel-system
+      server: https://kubernetes.default.svc
