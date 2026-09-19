@@ -1,11 +1,11 @@
-# Deployment -> tạo ReplicaSet -> ReplicaSet tạo 3 Pod theo label app=web
+# Deployment -> tạo ReplicaSet -> ReplicaSet tạo 2 Pod theo label app=web
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: web
   namespace: lab2
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: web
