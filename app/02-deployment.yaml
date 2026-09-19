@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: thanhlamcode/freelance-agency-template:latest
+          image: thanhlamcode/freelance-agency-template:8e3141b2fec20b9739701ea5a19ff05307db2456
           ports:
             - containerPort: 80
           readinessProbe:
