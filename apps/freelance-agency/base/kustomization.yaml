@@ -1,10 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - 00-namespace.yaml
-  - 02-deployment.yaml
-  - 03-service.yaml
-  - 06-ingress.yaml
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
 images:
   - name: thanhlamcode/freelance-agency-template
     newTag: 8e3141b2fec20b9739701ea5a19ff05307db2456

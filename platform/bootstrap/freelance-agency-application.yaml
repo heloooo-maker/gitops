@@ -18,7 +18,7 @@ spec:
   source:
     repoURL: https://github.com/heloooo-maker/gitops.git
     targetRevision: main
-    path: "app"
+    path: "apps/freelance-agency/base"
   destination:
     server: https://kubernetes.default.svc
     namespace: lab2
