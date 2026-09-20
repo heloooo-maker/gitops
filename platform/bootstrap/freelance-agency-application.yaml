@@ -1,6 +1,5 @@
-# Application "freelance-agency" -> theo dõi folder app/ trong repo gitops
-# LƯU Ý: file này CHỈ để lưu trữ/tham khảo, không được ArgoCD tự sync (nằm trong bootstrap/, bị exclude)
-# (bootstrap object - phải tạo bằng tay 1 lần qua kubectl apply)
+# Application "freelance-agency" uses a shared Helm chart plus app-specific values.
+# This follows the Truedoc pattern: reusable templates live in charts/, values live in apps/.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -13,14 +12,20 @@ metadata:
     argocd-image-updater.argoproj.io/web.helm.image-name: image.repository
     argocd-image-updater.argoproj.io/web.helm.image-tag: image.tag
     argocd-image-updater.argoproj.io/write-back-method: git
-    argocd-image-updater.argoproj.io/write-back-target: helmvalues:values.yaml
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:/apps/freelance-agency/values.yaml
     argocd-image-updater.argoproj.io/git-branch: main
 spec:
   project: freelance-agency
-  source:
-    repoURL: https://github.com/heloooo-maker/gitops.git
-    targetRevision: main
-    path: "apps/freelance-agency"
+  sources:
+    - repoURL: https://github.com/heloooo-maker/gitops.git
+      targetRevision: main
+      path: charts/web-app
+      helm:
+        valueFiles:
+          - $values/apps/freelance-agency/values.yaml
+    - repoURL: https://github.com/heloooo-maker/gitops.git
+      targetRevision: main
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: lab2
