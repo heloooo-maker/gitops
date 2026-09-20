@@ -1,5 +1,0 @@
-chart: general
-repoURL: oci://registry.thanhlam.online/helm
-targetRevision: "1.0.0"
-namespace: tunnel-system
-project: platform
