@@ -44,8 +44,7 @@ spec:
         # ApplicationSet is for self-built apps, which never need to
         # bootstrap before the registry does (unlike platform/appset-utilities.yaml's
         # "registry" entry, which must stay on the git path).
-        - chart: general
-          repoURL: oci://registry.thanhlam.online/helm
+        - repoURL: oci://registry.thanhlam.online/helm/general
           targetRevision: "1.0.0"
           helm:
             valueFiles:
