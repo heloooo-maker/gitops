@@ -23,12 +23,13 @@ spec:
     metadata:
       name: "{{path.basename}}-development"
       annotations:
-        argocd-image-updater.argoproj.io/image-list: app=thanhlamcode/{{path.basename}}
+        argocd-image-updater.argoproj.io/image-list: app=registry.thanhlam.online/{{path.basename}}
         argocd-image-updater.argoproj.io/app.allow-tags: regexp:^[0-9a-f]{40}$
         argocd-image-updater.argoproj.io/app.ignore-tags: latest, regexp:^latest.*$
         argocd-image-updater.argoproj.io/app.update-strategy: newest-build
         argocd-image-updater.argoproj.io/app.helm.image-name: image.repository
         argocd-image-updater.argoproj.io/app.helm.image-tag: image.tag
+        argocd-image-updater.argoproj.io/app.pull-secret: pullsecret:lab-thanhlam/registry-pull-secret
         argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd-thanhlam/repo-gitops
         argocd-image-updater.argoproj.io/write-back-target: helmvalues:/app/development/{{path.basename}}/values.yaml
         argocd-image-updater.argoproj.io/git-branch: main

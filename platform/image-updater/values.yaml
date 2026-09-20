@@ -11,3 +11,8 @@ config:
       api_url: https://registry-1.docker.io
       prefix: docker.io
       default: true
+    - name: registry.thanhlam.online
+      api_url: https://registry.thanhlam.online
+      prefix: registry.thanhlam.online
+      insecure: false
+      credentials: pullsecret:lab-thanhlam/registry-pull-secret
