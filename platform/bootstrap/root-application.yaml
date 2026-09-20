@@ -1,6 +1,5 @@
-# Application "root" -> vi du App-of-Apps: theo doi chinh folder bootstrap/ nay
-# Sync Policy: MANUAL (co tinh) - de nguoi dung tu bam Sync sau khi xem ky Diff,
-# tranh tu dong "nhan vo" lai 2 Application dang chay that (freelance-agency, platform)
+# Application "root" is the app-of-apps entry point for bootstrap resources.
+# Sync policy is manual on purpose so bootstrap/project/appset changes can be reviewed first.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

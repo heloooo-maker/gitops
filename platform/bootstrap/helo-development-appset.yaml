@@ -1,0 +1,51 @@
+# ApplicationSet for Helo development apps.
+# It follows the Truedoc pattern: one shared chart, one values.yaml per app folder.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: helo-development
+  namespace: argocd-thanhlam
+spec:
+  generators:
+    - git:
+        directories:
+          - path: helo/development/*
+        repoURL: https://github.com/heloooo-maker/gitops.git
+        revision: main
+  ignoreApplicationDifferences:
+    - jqPathExpressions:
+        - .spec.sources[]
+  template:
+    metadata:
+      name: "{{path.basename}}-development"
+      annotations:
+        argocd-image-updater.argoproj.io/image-list: app=thanhlamcode/{{path.basename}}
+        argocd-image-updater.argoproj.io/app.allow-tags: regexp:^[0-9a-f]{40}$
+        argocd-image-updater.argoproj.io/app.ignore-tags: latest, regexp:^latest.*$
+        argocd-image-updater.argoproj.io/app.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/app.helm.image-name: image.repository
+        argocd-image-updater.argoproj.io/app.helm.image-tag: image.tag
+        argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd-thanhlam/repo-gitops
+        argocd-image-updater.argoproj.io/write-back-target: helmvalues:/helo/development/{{path.basename}}/values.yaml
+        argocd-image-updater.argoproj.io/git-branch: main
+        argocd-image-updater.argoproj.io/git-repository: https://github.com/heloooo-maker/gitops.git
+    spec:
+      project: helo-development
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: lab2
+      sources:
+        - path: charts/web-app
+          repoURL: https://github.com/heloooo-maker/gitops.git
+          targetRevision: main
+          helm:
+            valueFiles:
+              - $values/helo/development/{{path.basename}}/values.yaml
+        - ref: values
+          repoURL: https://github.com/heloooo-maker/gitops.git
+          targetRevision: main
+      syncPolicy:
+        automated:
+          prune: true
+        syncOptions:
+          - ApplyOutOfSyncOnly=true
