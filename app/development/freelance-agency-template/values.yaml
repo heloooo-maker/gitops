@@ -4,12 +4,12 @@
 # can never collide with another app sharing this namespace: the Deployment's
 # own name is the literal deploy name, with no release-name prefix.
 image:
-  repository: registry.thanhlam.online/freelance-agency-template
+  repository: harbor.thanhlam.online/library/freelance-agency-template
   tag: 8e3141b2fec20b9739701ea5a19ff05307db2456
   pullPolicy: IfNotPresent
 
 imagePullSecrets:
-  - name: registry-pull-secret
+  - name: harbor-pull-secret
 
 serviceAccount:
   create: false

@@ -1,15 +1,10 @@
-# ApplicationSet for the general chart's bootstrap-safe consumers: registry
-# and cloudflared. Both MUST stay pinned to the git path (charts/general@main),
-# never the OCI copy in registry.thanhlam.online:
-# - registry deploys itself via this chart — pulling its own chart from
-#   itself would deadlock on first bring-up / disaster recovery.
-# - cloudflared owns the tunnel route TO registry.thanhlam.online — if it
-#   pulled its own chart from that same hostname, updating cloudflared's
-#   config would require cloudflared already routing to it. Same deadlock,
-#   one hop removed.
-# Everything else that uses the "general" chart pulls it from the OCI
-# registry once published — see platform/appset-repo-charts.yaml (chart.yaml,
-# not source.yaml).
+# ApplicationSet for the general chart's bootstrap-safe consumer: cloudflared.
+# Stays pinned to the git path (charts/general@main), never a registry/OCI
+# copy — cloudflared owns the tunnel route to every other hostname
+# (including any future self-hosted registry), so it must never depend on
+# one of those routes being up just to fetch its own chart.
+# (The registry:2 + charts-repo combo that used to live here was retired in
+# favor of Harbor, which now hosts every self-built image instead.)
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
