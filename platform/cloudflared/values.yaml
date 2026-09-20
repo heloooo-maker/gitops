@@ -31,6 +31,8 @@ configMap:
         service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
       - hostname: harbor.thanhlam.online
         service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
+      - hostname: resoweb.thanhlam.online
+        service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
       - service: http_status:404
 
 deployments:

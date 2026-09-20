@@ -1,0 +1,44 @@
+# ResoWeb — static site (nginx serving prebuilt HTML/CSS/JS, no server-side
+# build step). Rendered from the shared "general" chart, same pattern as
+# freelance-agency-template, image on Harbor instead of the old registry:2.
+image:
+  repository: harbor.thanhlam.online/library/resoweb
+  tag: 9e0d8c96193fce489f28fb0ea9cfb80c9fe16cca
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: harbor-pull-secret
+
+serviceAccount:
+  create: false
+
+secrets:
+  enabled: false
+
+deployments:
+  - name: resoweb
+    replicasCount: 2
+    service:
+      name: resoweb
+      port: 80
+      containerPort: 80
+      healthType: http
+      health:
+        live: /
+        ready: /
+        initialDelaySeconds: 2
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  tls: [] # TLS terminates at the Cloudflare Tunnel edge, not here
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  rules:
+    - host: resoweb.thanhlam.online
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: resoweb
+          servicePort: 80
