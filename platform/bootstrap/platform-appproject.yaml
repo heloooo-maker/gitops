@@ -10,6 +10,7 @@ spec:
   description: "Ha tang dung chung (ArgoCD ingress, ClusterIssuer, cloudflared) - tach rieng khoi app de tranh cascade-delete lan nhau"
   sourceRepos:
     - https://github.com/heloooo-maker/gitops.git
+    - https://argoproj.github.io/argo-helm
   destinations:
     - namespace: argocd-thanhlam
       server: https://kubernetes.default.svc
