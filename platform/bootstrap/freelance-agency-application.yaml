@@ -8,6 +8,7 @@ metadata:
   namespace: argocd-thanhlam
   annotations:
     argocd-image-updater.argoproj.io/image-list: web=thanhlamcode/freelance-agency-template
+    argocd-image-updater.argoproj.io/web.allow-tags: regexp:^[0-9a-f]{40}$
     argocd-image-updater.argoproj.io/web.update-strategy: newest-build
     argocd-image-updater.argoproj.io/write-back-method: git
     argocd-image-updater.argoproj.io/write-back-target: kustomization
