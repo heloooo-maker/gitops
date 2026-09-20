@@ -1,0 +1,38 @@
+{{- with $.Values.KongPlugins }}
+{{- range $global := $.Values.KongPlugins.Global }}
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: {{ printf "global-%s" $global.name }}
+  annotations:
+    kubernetes.io/ingress.class: "kong"
+  labels:
+    global: true
+    {{- include "gea.labels" $ | nindent 4 }}
+config: {{ $global.config | toYaml | nindent 2 }}
+plugin: {{ $global.name }}
+{{- end }}
+
+{{- range $local := $.Values.KongPlugins.Local }}
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: {{ printf "%s-%s" (include "gea.fullname" $) $local.name }}
+config: {{ $local.config | toYaml | nindent 2 }}
+plugin: {{ $local.name }}
+{{- end }}
+
+{{- range $consumer := $.Values.KongPlugins.Consumers }}
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongConsumer
+metadata:
+  name: {{ printf "%s-%s-consumer" (include "gea.fullname" $) $consumer.name }}
+  annotations:
+    kubernetes.io/ingress.class: kong
+    {{- ($consumer.annotations | default dict) | toYaml | nindent 4 }}
+{{- $consumer.config | toYaml }}
+{{- end }}
+{{- end }}

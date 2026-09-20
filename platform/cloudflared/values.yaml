@@ -1,0 +1,58 @@
+# Cloudflare Tunnel — outbound-only, no ingress needed. Built on the shared
+# "general" chart (charts/general in this repo).
+# The chart unconditionally renders liveness/readiness probes off
+# service.health, so a synthetic service block on cloudflared's real
+# built-in metrics/health port (2000) is required even though nothing needs
+# to reach it from outside — it also gets a real, useful metrics Service.
+image:
+  repository: cloudflare/cloudflared
+  tag: "latest"
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: false
+
+secrets:
+  enabled: false
+
+configMap:
+  config.yaml: |
+    tunnel: 16253783-b745-4355-b807-7bf305201dd5
+    credentials-file: /etc/cloudflared/creds/credentials.json
+    ingress:
+      - hostname: lab2.thanhlam.online
+        service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
+      - hostname: argocd.thanhlam.online
+        service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
+      - hostname: registry.thanhlam.online
+        service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
+      - hostname: vault.thanhlam.online
+        service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
+      - service: http_status:404
+
+deployments:
+  - name: cloudflared
+    replicasCount: 2
+    args:
+      - tunnel
+      - --config
+      - /etc/cloudflared/config.yaml
+      - run
+    service:
+      name: cloudflared
+      port: 2000
+      containerPort: 2000
+      healthType: "tcp"
+      health: {}
+    # References Secret cloudflared-tunnel-credentials, created directly on
+    # the cluster (kubectl) — the tunnel credentials never enter git.
+    mountConfigMaps:
+      - name: cloudflared
+        mountPath: /etc/cloudflared
+    mountSecrets:
+      - name: cloudflared-tunnel-credentials
+        mountPath: /etc/cloudflared/creds
+
+ingress:
+  enabled: false

@@ -1,15 +1,19 @@
-# ApplicationSet for Helo development apps.
-# It follows the Truedoc pattern: one shared chart, one values.yaml per app folder.
+# ApplicationSet for self-built apps only (freelance-agency-template, ...).
+# Shared platform utilities (registry, vault) live under platform/ instead —
+# see platform-appset.yaml — even though both land in lab-thanhlam, because
+# this template's image-updater annotations assume a self-built
+# thanhlamcode/<name> image on Docker Hub, which platform utilities don't have.
+# Follows the Truedoc pattern: one shared chart, one values.yaml per folder.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: helo-development
+  name: app-development
   namespace: argocd-thanhlam
 spec:
   generators:
     - git:
         directories:
-          - path: helo/development/*
+          - path: app/development/*
         repoURL: https://github.com/heloooo-maker/gitops.git
         revision: main
   ignoreApplicationDifferences:
@@ -26,21 +30,25 @@ spec:
         argocd-image-updater.argoproj.io/app.helm.image-name: image.repository
         argocd-image-updater.argoproj.io/app.helm.image-tag: image.tag
         argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd-thanhlam/repo-gitops
-        argocd-image-updater.argoproj.io/write-back-target: helmvalues:/helo/development/{{path.basename}}/values.yaml
+        argocd-image-updater.argoproj.io/write-back-target: helmvalues:/app/development/{{path.basename}}/values.yaml
         argocd-image-updater.argoproj.io/git-branch: main
         argocd-image-updater.argoproj.io/git-repository: https://github.com/heloooo-maker/gitops.git
     spec:
-      project: helo-development
+      project: app-development
       destination:
         server: https://kubernetes.default.svc
-        namespace: lab2
+        namespace: lab-thanhlam
       sources:
-        - path: charts/web-app
-          repoURL: https://github.com/heloooo-maker/gitops.git
-          targetRevision: main
+        # OCI copy in registry.thanhlam.online, not the git path — this
+        # ApplicationSet is for self-built apps, which never need to
+        # bootstrap before the registry does (unlike platform-appset.yaml's
+        # "registry" entry, which must stay on the git path).
+        - chart: general
+          repoURL: oci://registry.thanhlam.online/helm
+          targetRevision: "1.0.0"
           helm:
             valueFiles:
-              - $values/helo/development/{{path.basename}}/values.yaml
+              - $values/app/development/{{path.basename}}/values.yaml
         - ref: values
           repoURL: https://github.com/heloooo-maker/gitops.git
           targetRevision: main
@@ -49,3 +57,4 @@ spec:
           prune: true
         syncOptions:
           - ApplyOutOfSyncOnly=true
+          - CreateNamespace=true

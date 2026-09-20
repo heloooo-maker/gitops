@@ -1,0 +1,49 @@
+# ApplicationSet for platform singletons that need their OWN real Helm
+# chart (argocd, image-updater from argo-helm; vault, vault-unseal from
+# HashiCorp's own repo — repoURL is a chart.yaml field, not hardcoded, so
+# any upstream chart repo works). Each folder needs only 2 tiny files —
+# values.yaml (chart config) and chart.yaml (routing: repo/chart/version/
+# namespace) — no hand-written Application object. Kept as a SEPARATE
+# ApplicationSet from platform-appset.yaml because an Argo CD Application
+# source needs exactly one of `chart` or `path`, which can't be templated
+# conditionally in one ApplicationSet template — this one always uses
+# `chart:`, the other always uses `path:`.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-repo-charts
+  namespace: argocd-thanhlam
+spec:
+  generators:
+    - git:
+        files:
+          - path: platform/*/chart.yaml
+        repoURL: https://github.com/heloooo-maker/gitops.git
+        revision: main
+  ignoreApplicationDifferences:
+    - jqPathExpressions:
+        - .spec.sources[]
+  template:
+    metadata:
+      name: "{{path.basename}}"
+    spec:
+      project: "{{project}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+      sources:
+        - repoURL: "{{repoURL}}"
+          chart: "{{chart}}"
+          targetRevision: "{{targetRevision}}"
+          helm:
+            valueFiles:
+              - $values/platform/{{path.basename}}/values.yaml
+        - ref: values
+          repoURL: https://github.com/heloooo-maker/gitops.git
+          targetRevision: main
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ApplyOutOfSyncOnly=true

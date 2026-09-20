@@ -1,0 +1,68 @@
+{{- range $cronjob := $.Values.cronJobs -}}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ printf "%s-%s" (include "gea.fullname" $) $cronjob.name }}
+  labels:
+    app.kubernetes.io/instance: {{ printf "%s-%s" (include "gea.name" $) $cronjob.name }}
+    {{- include "gea.labels" $ | nindent 4 }}
+spec:
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  startingDeadlineSeconds: 100
+  concurrencyPolicy: Forbid
+  schedule: {{ .schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          {{- with $.Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+          - name: {{ printf "%s-%s" (include "gea.name" $) $cronjob.name }}
+            image: {{ printf "%s:%s" $.Values.image.repository $.Values.image.tag | quote }}
+            imagePullPolicy: {{ $.Values.image.pullPolicy }}
+            {{- include "gea.cmd" $cronjob | nindent 12}}
+            {{- include "gea.env" (mergeOverwrite dict ($.Values.env | default dict) ($cronjob.env | default dict)) | nindent 12 }}
+            {{- include "gea.resources" ($cronjob.resources | default ($.Values.resources | default dict)) | nindent 12 }}
+            {{- if or .mountConfigMaps .mountSecrets .mountPVC }}
+            volumeMounts:
+            {{- range .mountConfigMaps }}
+            - name: config-{{ .name }}-volume
+              mountPath: {{ .mountPath }}
+            {{- end }}
+            {{- range .mountSecrets }}
+            - name: secret-{{ .name }}-volume
+              mountPath: {{ .mountPath }}
+            {{- end }}
+            {{- range .mountPVC }}
+            - name: pvc-{{ .name }}-volume
+              mountPath: {{ .mountPath }}
+            {{- end }}
+            {{- end }}
+          {{- if or .mountConfigMaps .mountSecrets .mountPVC }}
+          volumes:
+          {{- range .mountConfigMaps }}
+          - name: config-{{ .name }}-volume
+            configMap:
+              name: {{ .name }}
+          {{- end }}
+          {{- range .mountSecrets }}
+          - name: secret-{{ .name }}-volume
+            secret:
+              secretName: {{ .name }} 
+          {{- end }}
+          {{- range .mountPVC }}
+          - name: pvc-{{ .name }}-volume
+            persistentVolumeClaim:
+              claimName: {{ .name }}-pvc
+          {{- end }}
+          {{ end }}
+          restartPolicy: OnFailure
+{{ end }}

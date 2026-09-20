@@ -1,0 +1,6 @@
+apiVersion: v1
+appVersion: 1.0.0
+description: Generic deployment/job/cronjob chart for helo-gitops platform components and apps
+name: general
+type: application
+version: 1.0.0

@@ -1,3 +1,21 @@
+# CRD "applications.argoproj.io" already exists in the cluster (installed by
+# a different ArgoCD there first) — never let this release fight over it.
+crds:
+  install: false
+# Must differ from the chart's default "argocd", or ClusterRole/
+# ClusterRoleBinding names collide with that other ArgoCD's.
+nameOverride: argocd-thanhlam
+
 configs:
   params:
     server.insecure: "true"
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hostname: argocd.thanhlam.online
+    path: /
+    pathType: Prefix
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "false" # TLS terminates at the Cloudflare Tunnel edge

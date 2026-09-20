@@ -1,6 +1,0 @@
-apiVersion: v2
-name: web-app
-description: Reusable Helm chart for web applications
-type: application
-version: 0.1.0
-appVersion: "1.0.0"

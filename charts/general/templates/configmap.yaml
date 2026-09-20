@@ -1,0 +1,17 @@
+{{- if or $.Values.configMap $.Values.configMapFiles -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s" (include "gea.fullname" $) }}
+  namespace: {{ $.Release.Namespace }}
+data:
+  {{- with $.Values.configMap }}
+  {{ . | toYaml | nindent 2 }}
+  {{- end }}
+  {{- with $.Values.configMapFiles }}
+  {{- range $files := $.Values.configMapFiles -}}
+    {{- ($.Files.Glob $files).AsConfig | nindent 2 }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+

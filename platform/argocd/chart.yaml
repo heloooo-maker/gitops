@@ -1,0 +1,10 @@
+chart: argo-cd
+repoURL: https://argoproj.github.io/argo-helm
+# Pinned to the version already live on the cluster (verified via
+# `kubectl get deploy -o jsonpath='{.metadata.labels.helm\.sh/chart}'` =
+# argo-cd-10.9.2) — wiring up self-management is a no-op version-wise.
+# ArgoCD manages ITSELF through this file: change targetRevision with care,
+# a bad chart version here can break the whole control plane.
+targetRevision: "10.9.2"
+namespace: argocd-thanhlam
+project: platform

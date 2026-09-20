@@ -1,0 +1,64 @@
+{{- range $job :=  $.Values.jobs }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-%s-%s" (include "gea.fullname" $) $job.name (($.Values | toJson) | sha1sum | trunc 8) }}
+  labels:
+    app.kubernetes.io/instance: {{ printf "%s-%s" (include "gea.name" $) $job.name }}
+    {{- include "gea.labels" $ | nindent 4 }}
+spec:
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "gea.name" $ }}
+        app.kubernetes.io/instance: {{ printf "%s-%s" (include "gea.name" $) $job.name }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ printf "%s-%s" (include "gea.name" $) $job.name }}
+        image: {{ printf "%s:%s" $.Values.image.repository $.Values.image.tag | quote }}
+        imagePullPolicy: {{ $.Values.image.pullPolicy }}
+        {{- include "gea.cmd" $job | nindent 8}}
+        {{- include "gea.env" (mergeOverwrite dict ($.Values.env | default dict) ($job.env | default dict)) | nindent 8 }}
+        {{- include "gea.resources" ($job.resources | default ($.Values.resources | default dict)) | nindent 8 }}
+        {{- if or .mountConfigMaps .mountSecrets .mountPVC }}
+        volumeMounts:
+        {{- range .mountConfigMaps }}
+        - name: config-{{ .name }}-volume
+          mountPath: {{ .mountPath }}
+        {{- end }}
+        {{- range .mountSecrets }}
+        - name: secret-{{ .name }}-volume
+          mountPath: {{ .mountPath }}
+        {{- end }}
+        {{- range .mountPVC }}
+        - name: pvc-{{ .name }}-volume
+          mountPath: {{ .mountPath }}
+        {{- end }}
+        {{- end }}
+      {{- if or .mountConfigMaps .mountSecrets .mountPVC }}
+      volumes:
+      {{- range .mountConfigMaps }}
+      - name: config-{{ .name }}-volume
+        configMap:
+          name: {{ .name }}
+      {{- end }}
+      {{- range .mountSecrets }}
+      - name: secret-{{ .name }}-volume
+        secret:
+          secretName: {{ .name }}
+      {{- end }}
+      {{- range .mountPVC }}
+      - name: pvc-{{ .name }}-volume
+        persistentVolumeClaim:
+          claimName: {{ .name }}-pvc
+      {{- end }}
+      {{ end }}
+      restartPolicy: Never
+  backoffLimit: {{ .backoffLimit | default 6 }}
+{{- end }}

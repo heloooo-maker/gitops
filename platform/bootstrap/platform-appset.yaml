@@ -1,0 +1,47 @@
+# ApplicationSet for the general chart's bootstrap-safe consumer(s) — right
+# now just "registry" itself. This MUST stay pinned to the git path
+# (charts/general@main), never the OCI copy in registry.thanhlam.online:
+# registry deploys itself via this chart, so pulling its own chart from
+# itself would deadlock on first bring-up / disaster recovery.
+# Everything else that uses the "general" chart pulls it from the OCI
+# registry once published — see platform-repo-appset.yaml (chart.yaml, not
+# source.yaml).
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-utilities
+  namespace: argocd-thanhlam
+spec:
+  generators:
+    - git:
+        files:
+          - path: platform/*/source.yaml
+        repoURL: https://github.com/heloooo-maker/gitops.git
+        revision: main
+  ignoreApplicationDifferences:
+    - jqPathExpressions:
+        - .spec.sources[]
+  template:
+    metadata:
+      name: "{{path.basename}}"
+    spec:
+      project: "{{project}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+      sources:
+        - path: charts/general
+          repoURL: https://github.com/heloooo-maker/gitops.git
+          targetRevision: main
+          helm:
+            valueFiles:
+              - $values/platform/{{path.basename}}/values.yaml
+        - ref: values
+          repoURL: https://github.com/heloooo-maker/gitops.git
+          targetRevision: main
+      syncPolicy:
+        automated:
+          prune: true
+        syncOptions:
+          - ApplyOutOfSyncOnly=true
+          - CreateNamespace=true

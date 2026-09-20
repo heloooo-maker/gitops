@@ -1,0 +1,24 @@
+{{- if $.Values.infisical.enabled }}
+apiVersion: secrets.infisical.com/v1alpha1
+kind: InfisicalSecret
+metadata:
+  name: {{ include "gea.fullname" $ }}
+  labels:
+    {{- include "gea.labels" $ | nindent 4 }}
+spec:
+  resyncInterval: 10
+  authentication:
+    universalAuth:
+      secretsScope:
+        projectSlug: {{ $.Values.infisical.config.projectSlug }}
+        envSlug: {{ $.Values.infisical.config.envSlug }}
+        secretsPath:  {{ $.Values.infisical.config.secretsPath }}
+        recursive: true
+      credentialsRef:
+        secretName: {{ default  "universal-auth-credentials"  $.Values.infisical.secretName  }}
+        secretNamespace: {{ default  "devops" $.Values.infisical.secretNamespace }}
+  managedSecretReference:
+    secretName: {{ include "gea.fullname" $ }}-infisical
+    secretNamespace: {{ .Release.Namespace }}
+    creationPolicy: "Orphan" ## Owner | Orphan (default)
+{{- end }}

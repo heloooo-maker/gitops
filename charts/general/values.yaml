@@ -1,0 +1,112 @@
+imagePullSecrets:
+  - name: registry
+image:
+  repository: hub.gea.vn/example
+  tag: v1.0
+deployments:
+  # []
+  - name: deployment-name
+    replicasCount: 0
+    args: ["sh"]
+    env: {}
+    service:
+      port: 9000
+      containerPort: 9000
+      gRPCPort: 10000
+      type: ClusterIP
+      healthType: "tcp" ###### Valid values include: command, tcp, grpc, http , default http
+      health:
+        port: 9000 ### Default port http
+  # healthType: "grpc"
+  # health:
+  #   port: 10000 ### Default port gprc
+  # healthType: "command"
+  # health:
+  #   livenessPort: 9000
+  #   readinessPort: 10001
+  #   livenessCMD:
+  #   - cat
+  #   - /etc/liveness
+  #   readinessCMD: ### Default livenessCMD
+  #   - cat
+  #   - /etc/readiness
+  #   ### Default livenessProbe and readinessProbe #######
+  #   livenessProbe:
+  #     initialDelaySeconds: 150
+  #     periodSeconds: 10
+  #     failureThreshold: 5
+  #     timeoutSeconds: 3
+  #   readinessProbe:
+  #     initialDelaySeconds: 10
+  #     periodSeconds: 10
+  #     failureThreshold: 4
+  #     timeoutSeconds: 2
+  #####################################################
+  # mountSecrets:
+  #   - name: example
+  #     mountPath: /secrets
+  # mountConfigMaps:
+  #   - name: example
+  #     mountPath: /etc/configs
+  # mountPVC:
+  #   - name: example
+  #     mountPath: /nfs
+
+#configMapFiles: []
+#  - configmap/example.json
+#configMap: {}
+# example.cfg: |
+#   configmap-example
+env: {}
+# env:
+# ENVIRONMENT_NAME: develop
+# DEBUG: 'false'
+secret:
+  {}
+  # secret-name: encrypted-data
+
+# jobs:
+# - name: init-db
+#   env:
+#     DB_APP: user-service
+#     DB_PASSWORD: abcxyz
+#   args:
+#   - ./scripts/manage_db.sh
+#   - migrate
+
+ingress:
+  enabled: false
+  plugins: []
+  ingressClassName: nginx
+  annotations:
+    {}
+    # abc: aaaa
+  tls:
+    - hosts:
+        - a.dev.gearment.com
+      secretName: gearment-tls
+  rules:
+    - host: user-dev.gea.vn
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: user-api-v1
+          servicePort: 80
+serviceAccountName: null
+serviceName:
+serviceAccount:
+  create: true
+persistence:
+  enabled: false
+  # accessModes:
+  size: 10Gi
+  storageClassName: "pd-standard"
+resources:
+  requests:
+    memory: 50Mi
+    cpu: 100m
+  limits:
+    memory: 100Mi
+    cpu: 200m
+infisical:
+  enabled : false

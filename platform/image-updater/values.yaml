@@ -1,0 +1,13 @@
+config:
+  argocd:
+    serverAddress: argocd-server.argocd-thanhlam.svc
+    grpcWeb: true
+    insecure: true
+  git:
+    user: argocd-image-updater
+    email: argocd-image-updater@thanhlam.online
+  registries:
+    - name: Docker Hub
+      api_url: https://registry-1.docker.io
+      prefix: docker.io
+      default: true

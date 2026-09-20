@@ -1,0 +1,248 @@
+{{- range $deploy :=  $.Values.deployments }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s"  $deploy.name }}
+  labels:
+    app.kubernetes.io/instance: {{ printf "%s-%s" (include "gea.name" $) $deploy.name }}
+    {{- include "gea.labels" $ | nindent 4 }}
+spec:
+  replicas: {{ $deploy.replicasCount | default 0 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "gea.name" $ }}
+      app.kubernetes.io/instance: {{ printf "%s-%s" (include "gea.name" $) $deploy.name }}
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: {{ $deploy.istioEnabled | default false | quote }}
+        {{- if or $deploy.service $deploy.prometheusScrapeEnabled }}
+        prometheus.io/scrape: {{ $deploy.prometheusScrapeEnabled | default true | quote }}
+        {{- if $deploy.prometheusScrapePort }}
+        prometheus.io/port: {{ $deploy.prometheusScrapePort | quote }}
+        {{- if $deploy.prometheusScrapePath }}
+        prometheus.io/path: {{ $deploy.prometheusScrapePath | default "/metrics" | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if $.Values.configMap }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+        {{- end }}
+        {{- if $.Values.secret }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") $ | sha256sum }}
+        {{- end }}
+      labels:
+        app.kubernetes.io/name: {{ include "gea.name" $ }}
+        app.kubernetes.io/instance: {{ include "gea.name" $ }}-{{ $deploy.name }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gea.serviceAccountName" $ }}
+      initContainers:
+      {{- range $deploy.initContainers }}
+        - name: {{ .name }}
+          image: {{ printf "%s:%s" $.Values.image.repository $.Values.image.tag | quote }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy | default "IfNotPresent"}}
+          {{- include "gea.env" (mergeOverwrite dict $.Values.env ($deploy.env | default dict)) | nindent 10 }}
+          {{- include "gea.cmd" . | nindent 10 }}
+          {{- include "gea.resources" ($deploy.resources | default ($.Values.resources | default dict)) | nindent 10 }}
+      {{- end }}
+      containers:
+        - name: {{ include "gea.name" $ }}-{{ $deploy.name }}
+          image: {{ printf "%s:%s" $.Values.image.repository $.Values.image.tag | quote }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy | default "IfNotPresent"}}
+          {{- include "gea.env" (mergeOverwrite dict $.Values.env ($deploy.env | default dict)) | nindent 10 }}
+          {{- include "gea.cmd" $deploy | nindent 10 }}
+          {{- if or $.Values.infisical.enabled $.Values.secrets.enabled }}
+          envFrom:
+          {{- if $.Values.secrets.enabled }}
+          - secretRef:
+              name: {{ $.Values.secrets.secretName }}
+          {{- end }}
+          {{- if $.Values.infisical.enabled }}
+          - secretRef:
+              name: {{ include "gea.fullname" $ }}-infisical
+          {{- end }}
+          {{- end }}
+          {{- if or $deploy.service $deploy.prometheusScrapePort }}
+          ports:
+            {{- with $deploy.service }}
+            - name: http
+              containerPort: {{ $deploy.service.containerPort | default $deploy.service.HTTPPort | default 9000 }}
+              protocol: TCP
+            {{- with $deploy.service.gRPCPort }}
+            - name: grpc
+              containerPort: {{ . | default 10000 }}
+              protocol: TCP
+            {{- end }}
+            {{- end }}
+            {{- with $deploy.prometheusScrapePort }}
+            - name: metrics
+              containerPort: {{ . }}
+              protocol: TCP
+            {{- end }}
+            {{- with .health }}
+            {{- with .livenessPort }}
+            - name: liveness
+              containerPort: {{ . }}
+            {{- end }}
+            {{- with .readinessPort }}
+            - name: readiness
+              containerPort: {{ . }}
+            {{- end }}
+            {{- end }}
+          {{- if or (.health | default dict).livenessProbe (not (.health | default dict).livenessProbe) }}
+          livenessProbe:
+            initialDelaySeconds: {{ $deploy.service.health.initialDelaySeconds | default 15 }}
+            periodSeconds: {{ $deploy.service.health.periodSeconds | default 10}}
+            failureThreshold: {{ $deploy.service.health.failureThreshold | default 5 }}
+            timeoutSeconds: {{ $deploy.service.health.timeoutSeconds | default 2 }}
+          {{- if eq $deploy.service.healthType "command" }}
+            exec:
+              command: {{ ($deploy.service.health | default dict).livenessCMD | required "service.health.livenessCMD is required"  }}
+          {{- else if eq $deploy.service.healthType "tcp" }}
+            tcpSocket:
+                port: {{ ($deploy.service.health | default dict).livenessPort | default "http" }}
+          {{- else if eq $deploy.service.healthType "grpc" }}
+            grpc:
+              port: {{ ($deploy.service.health | default dict).livenessPort | default "grpc" }}
+          {{- else if eq $deploy.service.healthType "nextv1" }}
+            httpGet:
+              path: {{ ($deploy.service.health | default dict).live | default "/api.health.v1.HealthService/Liveness?encoding=json&message={}" }}
+              port: {{ ($deploy.service.health | default dict).livenessPort | default "http" }}
+          {{- else }}
+            httpGet:
+              path: {{ ($deploy.service.health | default dict).live | default "/health" }}
+              port: {{ ($deploy.service.health | default dict).livenessPort | default "http" }}
+          {{- end }}
+          {{- else }}
+
+          {{- end }}
+          {{- if or (.health | default dict).readinessProbe (not (.health | default dict).readinessProbe) }}
+          readinessProbe:
+            initialDelaySeconds: {{ $deploy.service.health.initialDelaySeconds | default 15 }}
+            periodSeconds: {{ $deploy.service.health.periodSeconds | default 10}}
+            failureThreshold: {{ $deploy.service.health.failureThreshold | default 5 }}
+            timeoutSeconds: {{ $deploy.service.health.timeoutSeconds | default 2 }}
+          {{- if eq $deploy.service.healthType "command" }}
+            exec:
+              command: {{ ($deploy.service.health | default dict).readinessCMD | required "service.health.readinessCMD is required" }}
+          {{- else if eq $deploy.service.healthType "tcp" }}
+            tcpSocket:
+              port: {{ ($deploy.service.health | default dict).readinessPort | default "http" }}
+          {{- else if eq $deploy.service.healthType "grpc" }}
+            grpc:
+              port: {{ ($deploy.service.health | default dict).readinessPort | default "grpc" }}
+          {{- else if eq $deploy.service.healthType "nextv1" }}
+            httpGet:
+              path: {{ ($deploy.service.health | default dict).live | default "/api.health.v1.HealthService/Readiness?encoding=json&message={}" }}
+              port: {{ ($deploy.service.health | default dict).livenessPort | default "http" }}
+          {{- else }}
+            httpGet:
+              path: {{ ($deploy.service.health | default dict).ready | default "/ready" }}
+              port: {{ ($deploy.service.health | default dict).readinessPort | default "http" }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- include "gea.resources" ($deploy.resources | default ($.Values.resources | default dict)) | nindent 10 }}
+          {{- $hasVolumeMounts := or .mountConfigMaps .mountSecrets .mountPVC }}
+          {{- if $hasVolumeMounts }}
+          volumeMounts:
+          {{- range .mountConfigMaps }}
+          - name: config-{{ .name }}-volume
+            mountPath: {{ .mountPath }}
+          {{- end }}
+          {{- range .mountSecrets }}
+          - name: {{ .name }}
+            mountPath: {{ .mountPath }}
+          {{- end }}
+          {{- range .mountPVC }}
+          - name: pvc-{{ .name }}-volume
+            mountPath: {{ .mountPath }}
+          {{- end }}
+          {{- end }}
+      {{- $hasVolumes := or .mountConfigMaps .mountSecrets .mountPVC }}
+      {{- if $hasVolumes }}
+      volumes:
+      {{- range .mountConfigMaps }}
+      - name: config-{{ .name }}-volume
+        configMap:
+          name: {{ .name }}
+      {{- end }}
+      {{- range .mountSecrets }}
+      - name: {{ .name }}
+        secret:
+          secretName: {{ .name }}
+      {{- end }}
+      {{- range .mountPVC }}
+      - name: pvc-{{ .name }}-volume
+        persistentVolumeClaim:
+          claimName: {{ .name }}
+      {{- end }}
+      {{- end }}
+
+      {{- with $deploy.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $deploy.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $deploy.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- with $deploy.service }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name | default (printf "%s-%s" (include "gea.fullname" $) $deploy.name) }}
+  labels:
+    app.kubernetes.io/instance: {{ printf "%s-%s" (include "gea.name" $) $deploy.name }}
+    {{- include "gea.labels" $ | nindent 4 }}
+spec:
+  type: {{ .type | default "ClusterIP" }}
+  ports:
+    - port: {{ .port | default 80 }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    {{- with $deploy.service.gRPCPort }}
+    - port: {{ . | default 10000 }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+    {{- end }}
+  selector:
+    app.kubernetes.io/name: {{ include "gea.name" $ }}
+    app.kubernetes.io/instance: {{ printf "%s-%s" (include "gea.name" $) $deploy.name }}
+{{- end }}
+
+{{- with $deploy.autoScale }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ printf "%s-%s" (include "gea.fullname" $) $deploy.name }}
+spec:
+  maxReplicas: {{ .max }}
+  minReplicas: {{ .min | default 2 }}
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ printf "%s-%s" (include "gea.fullname" $) $deploy.name }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ .cpu | default 60}}
+{{- end }}
+{{- end }}
