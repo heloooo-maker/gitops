@@ -9,6 +9,7 @@ spec:
   sourceRepos:
     - https://github.com/heloooo-maker/gitops.git
     - oci://registry.thanhlam.online/general
+    - https://charts.thanhlam.online
     - https://helm.releases.hashicorp.com
   destinations:
     - namespace: lab-thanhlam

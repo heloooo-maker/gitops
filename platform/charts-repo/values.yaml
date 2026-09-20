@@ -1,0 +1,54 @@
+# Classic Helm chart repository (index.yaml + .tgz over plain HTTPS/Cloudflare
+# Tunnel) — matches the Long Van / truedoc pattern (2 distinct Sources: an
+# external chart repo pinned to a version, and a separate values repo on
+# main) instead of the OCI registry used elsewhere in this repo.
+# Static nginx site baked into the image at build time — no ConfigMap: .tgz
+# binaries don't belong in one. Rebuilding after a chart change: `helm
+# package` + `helm repo index . --url https://charts.thanhlam.online`, copy
+# both into the image, rebuild, push, bump the tag below.
+#
+# Bootstrap-safe on purpose: pulls the "general" chart from the OCI registry
+# (registry.thanhlam.online), never from ITSELF (charts.thanhlam.online) —
+# this server hosts the classic-repo copy that OTHER apps consume; consuming
+# its own output would deadlock the same way registry/cloudflared would.
+# Lives under platform/ (git-path via platform/appset-utilities.yaml), not
+# app/development/, for that reason.
+image:
+  repository: registry.thanhlam.online/charts-repo
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: registry-pull-secret
+
+serviceAccount:
+  create: false
+
+secrets:
+  enabled: false
+
+deployments:
+  - name: charts-repo
+    replicasCount: 1
+    service:
+      name: charts-repo
+      port: 80
+      containerPort: 80
+      healthType: http
+      health:
+        live: /index.yaml
+        ready: /index.yaml
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  tls: []
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false" # TLS terminates at the Cloudflare Tunnel edge
+  rules:
+    - host: charts.thanhlam.online
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: charts-repo
+          servicePort: 80

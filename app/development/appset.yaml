@@ -40,12 +40,13 @@ spec:
         server: https://kubernetes.default.svc
         namespace: lab-thanhlam
       sources:
-        # OCI copy in registry.thanhlam.online, not the git path — this
-        # ApplicationSet is for self-built apps, which never need to
-        # bootstrap before the registry does (unlike platform/appset-utilities.yaml's
-        # "registry" entry, which must stay on the git path).
+        # Classic HTTPS chart repo (charts.thanhlam.online), not the git path
+        # or the OCI copy — matches the Long Van / truedoc "2 distinct
+        # Sources" pattern. Self-built apps never need to bootstrap before
+        # charts-repo does (unlike platform/appset-utilities.yaml's
+        # "registry"/"cloudflared" entries, which must stay on the git path).
         - chart: general
-          repoURL: oci://registry.thanhlam.online/general
+          repoURL: https://charts.thanhlam.online
           targetRevision: "1.0.0"
           helm:
             valueFiles:
