@@ -1,0 +1,65 @@
+name: Package and publish general chart
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'charts/general/**'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: '3.14.4'
+
+      - name: Login to registry.thanhlam.online
+        run: |
+          helm registry login registry.thanhlam.online \
+            -u "${{ secrets.REGISTRY_USERNAME }}" \
+            -p "${{ secrets.REGISTRY_PASSWORD }}"
+          docker login registry.thanhlam.online \
+            -u "${{ secrets.REGISTRY_USERNAME }}" \
+            -p "${{ secrets.REGISTRY_PASSWORD }}"
+
+      - name: Package chart
+        run: helm package charts/general -d dist
+
+      # Bootstrap-safe consumer: platform/charts-repo itself pulls from here,
+      # never from the classic repo it serves (see platform/appset-utilities.yaml).
+      - name: Push OCI copy
+        run: helm push dist/general-*.tgz oci://registry.thanhlam.online
+
+      # Classic index.yaml + .tgz repo, baked into a static nginx image —
+      # every OTHER consumer (app/development/*) pulls from here.
+      - name: Build classic repo site
+        run: |
+          mkdir -p charts-repo-site
+          cp dist/*.tgz charts-repo-site/
+          cd charts-repo-site
+          helm repo index . --url https://charts.thanhlam.online
+          cat > Dockerfile <<'EOF'
+          FROM nginx:alpine
+          RUN rm -rf /usr/share/nginx/html/*
+          COPY . /usr/share/nginx/html/
+          EOF
+          rm -f Dockerfile.dockerignore
+
+      - name: Build and push charts-repo image
+        run: |
+          docker build -t registry.thanhlam.online/charts-repo:${{ github.sha }} charts-repo-site
+          docker push registry.thanhlam.online/charts-repo:${{ github.sha }}
+
+      - name: Bump charts-repo image tag in git
+        run: |
+          sed -i "s|tag: .*|tag: ${{ github.sha }}|" platform/charts-repo/values.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore(charts-repo): bump image to ${{ github.sha }}"
+          git push

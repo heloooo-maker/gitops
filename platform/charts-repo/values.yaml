@@ -3,9 +3,11 @@
 # external chart repo pinned to a version, and a separate values repo on
 # main) instead of the OCI registry used elsewhere in this repo.
 # Static nginx site baked into the image at build time — no ConfigMap: .tgz
-# binaries don't belong in one. Rebuilding after a chart change: `helm
-# package` + `helm repo index . --url https://charts.thanhlam.online`, copy
-# both into the image, rebuild, push, bump the tag below.
+# binaries don't belong in one. Rebuilt automatically by
+# .github/workflows/publish-general-chart.yml on every change under
+# charts/general/** — that workflow packages the chart, pushes the OCI copy,
+# rebuilds this image tagged with the commit SHA, and bumps `tag` below via
+# its own git commit. Never edit `tag` by hand; it's write-back only.
 #
 # Bootstrap-safe on purpose: pulls the "general" chart from the OCI registry
 # (registry.thanhlam.online), never from ITSELF (charts.thanhlam.online) —
@@ -16,7 +18,7 @@
 image:
   repository: registry.thanhlam.online/charts-repo
   tag: latest
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
 imagePullSecrets:
   - name: registry-pull-secret
