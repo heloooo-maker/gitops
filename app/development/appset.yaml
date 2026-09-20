@@ -1,6 +1,6 @@
 # ApplicationSet for self-built apps only (freelance-agency-template, ...).
 # Shared platform utilities (registry, vault) live under platform/ instead —
-# see platform-appset.yaml — even though both land in lab-thanhlam, because
+# see platform/appset-utilities.yaml — even though both land in lab-thanhlam, because
 # this template's image-updater annotations assume a self-built
 # thanhlamcode/<name> image on Docker Hub, which platform utilities don't have.
 # Follows the Truedoc pattern: one shared chart, one values.yaml per folder.
@@ -41,7 +41,7 @@ spec:
       sources:
         # OCI copy in registry.thanhlam.online, not the git path — this
         # ApplicationSet is for self-built apps, which never need to
-        # bootstrap before the registry does (unlike platform-appset.yaml's
+        # bootstrap before the registry does (unlike platform/appset-utilities.yaml's
         # "registry" entry, which must stay on the git path).
         - chart: general
           repoURL: oci://registry.thanhlam.online/helm

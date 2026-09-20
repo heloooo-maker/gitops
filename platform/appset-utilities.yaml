@@ -4,7 +4,7 @@
 # registry deploys itself via this chart, so pulling its own chart from
 # itself would deadlock on first bring-up / disaster recovery.
 # Everything else that uses the "general" chart pulls it from the OCI
-# registry once published — see platform-repo-appset.yaml (chart.yaml, not
+# registry once published — see platform/appset-repo-charts.yaml (chart.yaml, not
 # source.yaml).
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet

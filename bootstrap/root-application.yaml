@@ -1,0 +1,26 @@
+# Application "root" is the app-of-apps entry point. AppProject/ApplicationSet
+# files live co-located with what they manage (app/development/, platform/),
+# not in a separate bootstrap folder — matching truedoc's convention where
+# appset-<env>.yaml sits inside truedoc/<env>/ next to the apps themselves.
+# `include` (allow-list) is used instead of `exclude` here on purpose: this
+# recurses the WHOLE repo, and an allow-list means a mistake just misses a
+# new file rather than crashing on some unrelated values.yaml/chart template.
+# Sync policy is manual on purpose so bootstrap/project/appset changes can be reviewed first.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd-thanhlam
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/heloooo-maker/gitops.git
+    targetRevision: main
+    path: "."
+    directory:
+      recurse: true
+      include: "{app/development/appproject.yaml,app/development/appset.yaml,platform/appproject.yaml,platform/appset-utilities.yaml,platform/appset-repo-charts.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd-thanhlam
+  syncPolicy: {}

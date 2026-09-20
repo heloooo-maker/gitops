@@ -4,7 +4,7 @@
 # any upstream chart repo works). Each folder needs only 2 tiny files —
 # values.yaml (chart config) and chart.yaml (routing: repo/chart/version/
 # namespace) — no hand-written Application object. Kept as a SEPARATE
-# ApplicationSet from platform-appset.yaml because an Argo CD Application
+# ApplicationSet from platform/appset-utilities.yaml because an Argo CD Application
 # source needs exactly one of `chart` or `path`, which can't be templated
 # conditionally in one ApplicationSet template — this one always uses
 # `chart:`, the other always uses `path:`.
