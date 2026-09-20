@@ -10,15 +10,17 @@ metadata:
     argocd-image-updater.argoproj.io/image-list: web=thanhlamcode/freelance-agency-template
     argocd-image-updater.argoproj.io/web.allow-tags: regexp:^[0-9a-f]{40}$
     argocd-image-updater.argoproj.io/web.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/web.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/web.helm.image-tag: image.tag
     argocd-image-updater.argoproj.io/write-back-method: git
-    argocd-image-updater.argoproj.io/write-back-target: kustomization
+    argocd-image-updater.argoproj.io/write-back-target: helmvalues:values.yaml
     argocd-image-updater.argoproj.io/git-branch: main
 spec:
   project: freelance-agency
   source:
     repoURL: https://github.com/heloooo-maker/gitops.git
     targetRevision: main
-    path: "apps/freelance-agency/base"
+    path: "apps/freelance-agency"
   destination:
     server: https://kubernetes.default.svc
     namespace: lab2
