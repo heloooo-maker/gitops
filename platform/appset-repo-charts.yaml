@@ -1,13 +1,26 @@
-# ApplicationSet for platform singletons that need their OWN real Helm
-# chart (argocd, image-updater from argo-helm; vault, vault-unseal from
-# HashiCorp's own repo — repoURL is a chart.yaml field, not hardcoded, so
-# any upstream chart repo works). Each folder needs only 2 tiny files —
-# values.yaml (chart config) and chart.yaml (routing: repo/chart/version/
-# namespace) — no hand-written Application object. Kept as a SEPARATE
-# ApplicationSet from platform/appset-utilities.yaml because an Argo CD Application
-# source needs exactly one of `chart` or `path`, which can't be templated
-# conditionally in one ApplicationSet template — this one always uses
-# `chart:`, the other always uses `path:`.
+# ApplicationSet for platform singletons that need their OWN real upstream
+# Helm chart (argocd, image-updater from argo-helm; vault from HashiCorp's
+# own repo — repoURL is a chart.yaml field, not hardcoded, so any upstream
+# chart repo works). Each folder needs only 2 tiny files — values.yaml
+# (chart config) and chart.yaml (routing: repo/chart/version/namespace) —
+# no hand-written Application object.
+#
+# When to put a component HERE vs on the generic "general" chart
+# (platform/appset-utilities.yaml, or app/development/ for self-built apps):
+# an official chart is worth it once the software is mature enough to have
+# one — you inherit its correct operational logic, security patches and new
+# features from upstream for free instead of re-deriving them by hand in a
+# generic template. Trade-off: every chart has its OWN values schema to
+# learn, and its version has to be tracked/bumped by hand (chart.yaml's
+# targetRevision doesn't auto-update). Put a component on the generic chart
+# instead when no such official chart exists or is worth adopting yet
+# (e.g. cloudflared has no official Helm chart) — a values schema you
+# already know beats a bespoke schema for a chart nobody maintains upstream.
+#
+# Kept as a SEPARATE ApplicationSet from platform/appset-utilities.yaml
+# because an Argo CD Application source needs exactly one of `chart` or
+# `path`, which can't be templated conditionally in one ApplicationSet
+# template — this one always uses `chart:`, the other always uses `path:`.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
