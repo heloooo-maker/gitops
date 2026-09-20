@@ -27,9 +27,9 @@ configMap:
         service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
       - hostname: registry.thanhlam.online
         service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
-      - hostname: vault.thanhlam.online
-        service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
       - hostname: charts.thanhlam.online
+        service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
+      - hostname: harbor.thanhlam.online
         service: http://ingress-nginx-controller.nginx-controller.svc.cluster.local:80
       - service: http_status:404
 

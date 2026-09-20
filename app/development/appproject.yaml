@@ -10,6 +10,7 @@ spec:
     - https://github.com/heloooo-maker/gitops.git
     - oci://registry.thanhlam.online/general
     - https://charts.thanhlam.online
+    - https://helm.goharbor.io
   destinations:
     - namespace: lab-thanhlam
       server: https://kubernetes.default.svc

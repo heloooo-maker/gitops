@@ -1,0 +1,51 @@
+# Harbor — replaces the homegrown registry:2 + charts-repo combo with a real
+# artifact manager (UI, project-based auth, image + Helm chart storage in
+# one), matching the Long Van / JFrog Artifactory pattern. Official chart
+# (helm.goharbor.io) — no self-reference risk like registry:2 had, since
+# Harbor's own chart comes from goharbor.io, never from Harbor itself.
+expose:
+  type: ingress
+  tls:
+    enabled: false # TLS terminates at the Cloudflare Tunnel edge, not here
+  ingress:
+    hosts:
+      core: harbor.thanhlam.online
+    className: nginx
+    annotations:
+      ingress.kubernetes.io/ssl-redirect: "false"
+      ingress.kubernetes.io/proxy-body-size: "0"
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
+
+externalURL: https://harbor.thanhlam.online
+
+# Homelab, single node — skip the vulnerability scanner to save CPU/memory;
+# nothing else here depends on it.
+trivy:
+  enabled: false
+
+persistence:
+  enabled: true
+  resourcePolicy: "keep"
+  persistentVolumeClaim:
+    registry:
+      storageClass: local-path
+      size: 20Gi
+    jobservice:
+      jobLog:
+        storageClass: local-path
+        size: 1Gi
+    database:
+      storageClass: local-path
+      size: 5Gi
+    redis:
+      storageClass: local-path
+      size: 1Gi
+    trivy:
+      storageClass: local-path
+      size: 5Gi
+
+# Read by ArgoCD from a Secret created directly on the cluster (kubectl) —
+# the admin password never enters git.
+existingSecretAdminPassword: harbor-admin-password
+existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
