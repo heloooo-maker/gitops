@@ -38,6 +38,8 @@ deployments:
       - tunnel
       - --config
       - /etc/cloudflared/config.yaml
+      - --metrics
+      - 0.0.0.0:2000 # cloudflared doesn't listen here by default — must be explicit for the liveness/readiness TCP probe below to ever succeed
       - run
     service:
       name: cloudflared
