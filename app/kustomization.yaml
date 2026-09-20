@@ -7,4 +7,4 @@ resources:
   - 06-ingress.yaml
 images:
   - name: thanhlamcode/freelance-agency-template
-    newTag: latest
+    newTag: 8e3141b2fec20b9739701ea5a19ff05307db2456
