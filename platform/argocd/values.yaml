@@ -6,6 +6,18 @@ crds:
 # ClusterRoleBinding names collide with that other ArgoCD's.
 nameOverride: argocd-thanhlam
 
+# Cluster has no IPv6 egress route. registry.thanhlam.online is Cloudflare-
+# proxied, so DNS also returns an AAAA record — repo-server tries that first
+# and fails ("network is unreachable") before ever trying the working IPv4
+# address. Pin it here so every ArgoCD pod resolves IPv4 directly, skipping
+# DNS for this host entirely. If Cloudflare ever rotates this anycast IP,
+# update it here (check with `curl -s "https://cloudflare-dns.com/dns-query?name=registry.thanhlam.online&type=A" -H "accept: application/dns-json"`).
+global:
+  hostAliases:
+    - ip: "104.21.62.154"
+      hostnames:
+        - registry.thanhlam.online
+
 configs:
   params:
     server.insecure: "true"
