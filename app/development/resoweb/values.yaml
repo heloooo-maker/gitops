@@ -15,9 +15,20 @@ serviceAccount:
 secrets:
   enabled: false
 
+# Vault Secrets Operator demo: syncs secret/resoweb (Vault dev instance,
+# platform/vault) into this K8s Secret, mounted below. Requires
+# app/development/vault-auth.yaml applied once in this namespace.
+vaultSecret:
+  enabled: true
+  path: resoweb
+  secretName: resoweb-vault-demo
+
 deployments:
   - name: resoweb
     replicasCount: 2
+    mountSecrets:
+      - name: resoweb-vault-demo
+        mountPath: /vault/secrets
     service:
       name: resoweb
       port: 80

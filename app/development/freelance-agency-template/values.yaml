@@ -17,9 +17,20 @@ serviceAccount:
 secrets:
   enabled: false
 
+# Vault Secrets Operator demo: syncs secret/freelance-agency-template (Vault
+# dev instance, platform/vault) into this K8s Secret, mounted below.
+# Requires app/development/vault-auth.yaml applied once in this namespace.
+vaultSecret:
+  enabled: true
+  path: freelance-agency-template
+  secretName: freelance-agency-template-vault-demo
+
 deployments:
   - name: freelance-agency-template
     replicasCount: 2
+    mountSecrets:
+      - name: freelance-agency-template-vault-demo
+        mountPath: /vault/secrets
     service:
       name: freelance-agency-template
       port: 80

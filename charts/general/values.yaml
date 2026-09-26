@@ -110,3 +110,16 @@ resources:
     cpu: 200m
 infisical:
   enabled : false
+
+# Syncs one Vault KV-v2 path into a real K8s Secret via Vault Secrets
+# Operator (VaultStaticSecret CR) - separate from the ESO-based `secrets`
+# block above, unused on this cluster. Requires a VaultAuth named
+# vaultSecret.vaultAuthRef (default "vault-auth") to already exist in this
+# namespace. Combine with `mountSecrets` on a deployment to consume it.
+vaultSecret:
+  enabled: false
+  # vaultAuthRef: vault-auth
+  # mount: secret
+  # path: my-app
+  # secretName: my-app-vault-demo
+  # refreshAfter: 60s

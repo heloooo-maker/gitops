@@ -1,0 +1,29 @@
+# Reference only - NOT auto-synced (app-development's ApplicationSet uses a
+# directory generator over app/development/*, a loose file here is never
+# picked up). Applied by hand once with `kubectl apply -f`:
+#   kubectl apply -f app/development/vault-auth.yaml
+# Shared by every VaultStaticSecret this namespace's apps create (see
+# charts/general/templates/vault-static-secret.yaml, vaultSecret.vaultAuthRef).
+# Requires: Vault kubernetes auth enabled + a role bound to
+# lab-thanhlam/default granting read on the KV paths each app reads
+# (see platform/vault/values.yaml for where Vault itself lives).
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: vault-connection
+  namespace: lab-thanhlam
+spec:
+  address: http://vault.vault-thanhlam.svc.cluster.local:8200
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth
+  namespace: lab-thanhlam
+spec:
+  vaultConnectionRef: vault-connection
+  method: kubernetes
+  mount: kubernetes
+  kubernetes:
+    role: lab-thanhlam-demo
+    serviceAccount: default
