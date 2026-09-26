@@ -10,18 +10,18 @@
 # its own git commit. Never edit `tag` by hand; it's write-back only.
 #
 # Bootstrap-safe on purpose: pulls the "general" chart from the OCI registry
-# (registry.thanhlam.online), never from ITSELF (charts.thanhlam.online) —
+# (harbor.thanhlam.online), never from ITSELF (charts.thanhlam.online) —
 # this server hosts the classic-repo copy that OTHER apps consume; consuming
 # its own output would deadlock the same way registry/cloudflared would.
 # Lives under platform/ (git-path via platform/appset-utilities.yaml), not
 # app/development/, for that reason.
 image:
-  repository: registry.thanhlam.online/charts-repo
+  repository: harbor.thanhlam.online/library/charts-repo
   tag: latest
   pullPolicy: IfNotPresent
 
 imagePullSecrets:
-  - name: registry-pull-secret
+  - name: harbor-pull-secret
 
 serviceAccount:
   create: false

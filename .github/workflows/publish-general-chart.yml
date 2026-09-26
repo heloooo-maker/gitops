@@ -19,12 +19,12 @@ jobs:
         with:
           version: '3.14.4'
 
-      - name: Login to registry.thanhlam.online
+      - name: Login to harbor.thanhlam.online
         run: |
-          helm registry login registry.thanhlam.online \
+          helm registry login harbor.thanhlam.online \
             -u "${{ secrets.REGISTRY_USERNAME }}" \
             -p "${{ secrets.REGISTRY_PASSWORD }}"
-          docker login registry.thanhlam.online \
+          docker login harbor.thanhlam.online \
             -u "${{ secrets.REGISTRY_USERNAME }}" \
             -p "${{ secrets.REGISTRY_PASSWORD }}"
 
@@ -34,7 +34,7 @@ jobs:
       # Bootstrap-safe consumer: platform/charts-repo itself pulls from here,
       # never from the classic repo it serves (see platform/appset-utilities.yaml).
       - name: Push OCI copy
-        run: helm push dist/general-*.tgz oci://registry.thanhlam.online
+        run: helm push dist/general-*.tgz oci://harbor.thanhlam.online/library
 
       # Classic index.yaml + .tgz repo, baked into a static nginx image —
       # every OTHER consumer (app/development/*) pulls from here.
@@ -53,8 +53,8 @@ jobs:
 
       - name: Build and push charts-repo image
         run: |
-          docker build -t registry.thanhlam.online/charts-repo:${{ github.sha }} charts-repo-site
-          docker push registry.thanhlam.online/charts-repo:${{ github.sha }}
+          docker build -t harbor.thanhlam.online/library/charts-repo:${{ github.sha }} charts-repo-site
+          docker push harbor.thanhlam.online/library/charts-repo:${{ github.sha }}
 
       - name: Bump charts-repo image tag in git
         run: |
