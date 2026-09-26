@@ -1,0 +1,14 @@
+# Dev mode: in-memory, auto-unseals, fixed root token "root".
+# Loses all data on pod restart - for learning/testing VSO only, never production.
+server:
+  dev:
+    enabled: true
+    devRootToken: "root"
+  ha:
+    enabled: false
+  dataStorage:
+    enabled: false
+injector:
+  enabled: false
+ui:
+  enabled: true

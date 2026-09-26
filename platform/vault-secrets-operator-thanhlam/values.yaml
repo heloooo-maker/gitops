@@ -1,0 +1,7 @@
+# fullnameOverride is MANDATORY: this chart names its ClusterRole/ClusterRoleBinding
+# after Release.Name, not the namespace. This cluster already has another
+# vault-secrets-operator install using the default name - must override here
+# to avoid colliding with it.
+fullnameOverride: vault-secrets-operator-thanhlam
+defaultVaultConnection:
+  enabled: false
