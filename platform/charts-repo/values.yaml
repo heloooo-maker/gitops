@@ -17,7 +17,7 @@
 # app/development/, for that reason.
 image:
   repository: harbor.thanhlam.online/library/charts-repo
-  tag: latest
+  tag: 38eb1b872529b72c9cc67c074c62f8efb210f56f
   pullPolicy: IfNotPresent
 
 imagePullSecrets:
