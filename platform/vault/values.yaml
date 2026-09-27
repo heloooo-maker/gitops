@@ -16,12 +16,17 @@ server:
   dataStorage:
     enabled: true
     size: 1Gi
-  # VAULT_SEAL_TRANSIT_TOKEN is interpolated into standalone.config below
-  # (Vault's HCL parser expands ${ENV_VAR} natively, no extra flag needed).
+  # Vault's config file does NOT expand ${ENV_VAR} on its own (verified -
+  # putting `token = "${VAULT_SEAL_TRANSIT_TOKEN}"` in standalone.config
+  # sends that literal string as the token, 403s as "invalid token"). The
+  # documented way to keep this token out of the plaintext config: omit
+  # `token` from the seal "transit" block entirely and set the plain
+  # VAULT_TOKEN env var instead - Vault reads it from there for exactly
+  # this purpose (https://developer.hashicorp.com/vault/docs/configuration/seal/transit).
   # This Secret is created by hand per platform/vault-kms-bootstrap.sh -
   # doesn't exist until that's been run once.
   extraSecretEnvironmentVars:
-    - envName: VAULT_SEAL_TRANSIT_TOKEN
+    - envName: VAULT_TOKEN
       secretName: vault-kms-transit-token
       secretKey: token
   # Same as the chart's own default standalone.config (ui + tcp listener +
@@ -40,7 +45,6 @@ server:
       }
       seal "transit" {
         address     = "http://vault-kms.vault-kms-thanhlam.svc.cluster.local:8200"
-        token       = "${VAULT_SEAL_TRANSIT_TOKEN}"
         key_name    = "autounseal"
         mount_path  = "transit/"
         disable_renewal = "false"
