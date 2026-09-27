@@ -132,3 +132,53 @@ dashboards:
             }
           ]
         }
+    app-logs:
+      json: |
+        {
+          "title": "App Logs (lab-thanhlam)",
+          "uid": "app-logs-lab-thanhlam",
+          "schemaVersion": 39,
+          "timezone": "browser",
+          "time": { "from": "now-1h", "to": "now" },
+          "refresh": "30s",
+          "panels": [
+            {
+              "id": 1,
+              "type": "logs",
+              "title": "freelance-agency-template",
+              "gridPos": { "h": 12, "w": 24, "x": 0, "y": 0 },
+              "datasource": { "type": "loki", "uid": "loki" },
+              "options": {
+                "showTime": true,
+                "wrapLogMessage": true,
+                "sortOrder": "Descending"
+              },
+              "targets": [
+                {
+                  "refId": "A",
+                  "datasource": { "type": "loki", "uid": "loki" },
+                  "expr": "{namespace=\"lab-thanhlam\", pod=~\"freelance-agency-template.*\"}"
+                }
+              ]
+            },
+            {
+              "id": 2,
+              "type": "logs",
+              "title": "resoweb",
+              "gridPos": { "h": 12, "w": 24, "x": 0, "y": 12 },
+              "datasource": { "type": "loki", "uid": "loki" },
+              "options": {
+                "showTime": true,
+                "wrapLogMessage": true,
+                "sortOrder": "Descending"
+              },
+              "targets": [
+                {
+                  "refId": "A",
+                  "datasource": { "type": "loki", "uid": "loki" },
+                  "expr": "{namespace=\"lab-thanhlam\", pod=~\"resoweb.*\"}"
+                }
+              ]
+            }
+          ]
+        }
