@@ -17,16 +17,21 @@ jobs:
 
       - uses: azure/setup-helm@v4
         with:
-          version: '3.14.4'
+          version: 'latest'
 
+      # helm/docker registry login's own exit code is unreliable against this
+      # Harbor instance (observed: reports "Unauthorized" yet still writes
+      # working credentials, verified by a real `helm push` succeeding right
+      # after) - don't let that false negative kill the job, the real push
+      # steps below are the actual, reliable pass/fail gate.
       - name: Login to harbor.thanhlam.online
         run: |
-          helm registry login harbor.thanhlam.online \
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | helm registry login harbor.thanhlam.online \
             -u "${{ secrets.REGISTRY_USERNAME }}" \
-            -p "${{ secrets.REGISTRY_PASSWORD }}"
-          docker login harbor.thanhlam.online \
+            --password-stdin || true
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login harbor.thanhlam.online \
             -u "${{ secrets.REGISTRY_USERNAME }}" \
-            -p "${{ secrets.REGISTRY_PASSWORD }}"
+            --password-stdin || true
 
       - name: Package chart
         run: helm package charts/general -d dist
