@@ -1,0 +1,78 @@
+# platform/vault is standalone with real persisted storage now, so this
+# config (audit device, auth method, policy, role, the Grafana KV secret)
+# survives ordinary restarts on its own - it only needs REDOING if Vault's
+# storage was ever wiped (PVC lost, or a brand new `vault operator init` -
+# see platform/vault-init). This CronJob re-applies it every 5 minutes
+# anyway as a cheap defensive self-heal:
+#   1. audit device -> stdout (platform/promtail ships it as a container log)
+#   2. kubernetes auth method + a read-only role for the Grafana pod
+#   3. the Grafana admin credential in KV (only written once - if the path
+#      already holds a value this leaves it alone, so a manually rotated
+#      password survives future runs)
+# VAULT_TOKEN reads the root token platform/vault-init generated at
+# `vault operator init` time and stored in the "vault-init" Secret - it
+# can't be stored INSIDE Vault itself (nothing to authenticate the
+# bootstrap with otherwise). Until vault-init has run at least once
+# (first-ever boot), this Secret doesn't exist yet and this CronJob's runs
+# fail - expected, and it self-heals on the next 5-minute tick.
+# Runs on the general chart (charts/general) as a CronJob-only app - no
+# Deployment, no Service.
+image:
+  repository: hashicorp/vault
+  tag: "1.18"
+  pullPolicy: IfNotPresent
+
+# Public Docker Hub image - the chart's default imagePullSecrets ("registry")
+# doesn't exist in vault-thanhlam and isn't needed here.
+imagePullSecrets: []
+
+deployments: []
+
+secrets:
+  enabled: false
+
+env:
+  VAULT_ADDR: http://vault.vault-thanhlam.svc.cluster.local:8200
+  VAULT_TOKEN: "secret:vault-init.root-token"
+
+cronJobs:
+  - name: bootstrap
+    schedule: "*/5 * * * *"
+    command:
+      - /bin/sh
+      - -c
+    args:
+      - |
+        set -e
+
+        vault audit enable file file_path=stdout || true
+
+        vault auth enable kubernetes || true
+        vault write auth/kubernetes/config kubernetes_host=https://kubernetes.default.svc:443
+
+        vault policy write grafana-read - <<'EOF'
+        path "secret/data/vault-thanhlam/grafana" {
+          capabilities = ["read"]
+        }
+        EOF
+
+        vault write auth/kubernetes/role/vault-thanhlam-grafana \
+          bound_service_account_names=grafana \
+          bound_service_account_namespaces=vault-thanhlam \
+          policies=grafana-read \
+          ttl=1h
+
+        if ! vault kv get secret/vault-thanhlam/grafana >/dev/null 2>&1; then
+          PASSWORD=$(head -c18 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c20)
+          vault kv put secret/vault-thanhlam/grafana admin-user=admin admin-password="$PASSWORD"
+        fi
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 96Mi
+
+serviceAccount:
+  create: false

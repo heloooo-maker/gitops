@@ -1,0 +1,28 @@
+# Ships container stdout into Loki (platform/loki) for the vault-thanhlam
+# audit pipeline. Vault's audit device is enabled with file_path=stdout (see
+# platform/vault-audit-enable), so its audit log is just the vault pod's
+# normal container log - no sidecar or extra volume needed.
+#
+# This is a shared multi-tenant cluster (rancher-managed, many unrelated
+# namespaces) - promtail's DaemonSet necessarily discovers pods
+# cluster-wide (kubernetes_sd_configs role: pod requires that), but the
+# extraRelabelConfigs "keep" below drops every target except
+# vault-thanhlam BEFORE promtail ever reads a log file, so no other
+# tenant's logs get shipped to our Loki.
+config:
+  clients:
+    - url: http://loki.vault-thanhlam.svc.cluster.local:3100/loki/api/v1/push
+  snippets:
+    extraRelabelConfigs:
+      - source_labels:
+          - namespace
+        regex: vault-thanhlam
+        action: keep
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi

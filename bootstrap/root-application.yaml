@@ -19,7 +19,7 @@ spec:
     path: "."
     directory:
       recurse: true
-      include: "{app/development/appproject.yaml,app/development/appset.yaml,platform/appproject.yaml,platform/appset-utilities.yaml,platform/appset-repo-charts.yaml}"
+      include: "{app/development/appproject.yaml,app/development/appset.yaml,platform/appproject.yaml,platform/appset-utilities.yaml,platform/appset-repo-charts.yaml,platform/vault-init-rbac.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd-thanhlam

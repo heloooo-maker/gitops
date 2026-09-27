@@ -1,0 +1,36 @@
+# Lets platform/vault-init (running as vault-thanhlam's "default"
+# ServiceAccount - the general chart's Job/CronJob templates don't set
+# serviceAccountName, so every Job in this namespace runs as "default")
+# create the one-time "vault-init" Secret holding the root token from
+# `vault operator init`. No get/update/patch needed - unlike the old
+# Shamir-unseal design (git history), there's nothing to read back and
+# re-apply on every restart anymore; Transit auto-unseal (platform/vault-kms)
+# handles that instead.
+#
+# Not part of any ApplicationSet (no chart.yaml/source.yaml here) - applied
+# via bootstrap/root-application.yaml's directory include, same as
+# platform/appproject.yaml itself. Requires a manual `argocd app sync root`
+# after merge (root's syncPolicy is deliberately manual).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vault-init
+  namespace: vault-thanhlam
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vault-init
+  namespace: vault-thanhlam
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: vault-thanhlam
+roleRef:
+  kind: Role
+  name: vault-init
+  apiGroup: rbac.authorization.k8s.io

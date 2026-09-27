@@ -1,5 +1,6 @@
 # AppProject "platform" -> scope for argocd-thanhlam/tunnel-system: root,
-# argocd (self-management), image-updater, cloudflared, vault, vault-secrets-operator.
+# argocd (self-management), image-updater, cloudflared, vault, vault-secrets-operator,
+# and the vault audit pipeline (loki, promtail, grafana, vault-audit-enable).
 # Bootstrap object: must be created by hand once before the "root" Application
 # (project: platform) can exist — see root-application.yaml.
 apiVersion: argoproj.io/v1alpha1
@@ -8,12 +9,13 @@ metadata:
   name: platform
   namespace: argocd-thanhlam
 spec:
-  description: "Ha tang dung chung (ArgoCD, image-updater, cloudflared, vault) - tach rieng khoi app de tranh cascade-delete lan nhau"
+  description: "Ha tang dung chung (ArgoCD, image-updater, cloudflared, vault, audit pipeline) - tach rieng khoi app de tranh cascade-delete lan nhau"
   sourceRepos:
     - https://github.com/heloooo-maker/gitops.git
     - https://argoproj.github.io/argo-helm
     - oci://registry.thanhlam.online/helm
     - https://helm.releases.hashicorp.com
+    - https://grafana.github.io/helm-charts
   destinations:
     - namespace: argocd-thanhlam
       server: https://kubernetes.default.svc
@@ -22,6 +24,8 @@ spec:
     - namespace: vault-thanhlam
       server: https://kubernetes.default.svc
     - namespace: vault-secrets-operator-thanhlam
+      server: https://kubernetes.default.svc
+    - namespace: vault-kms-thanhlam
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: rbac.authorization.k8s.io

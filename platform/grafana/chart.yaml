@@ -1,0 +1,8 @@
+# 10.5.15 is the chart's last published release and is flagged
+# `deprecated: true` upstream (artifacthub/index.yaml) - pinned one patch
+# back at 10.5.14, the newest non-deprecated version, instead.
+chart: grafana
+repoURL: https://grafana.github.io/helm-charts
+targetRevision: "10.5.14"
+namespace: vault-thanhlam
+project: platform

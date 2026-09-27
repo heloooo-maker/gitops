@@ -1,0 +1,134 @@
+# Dashboard for the vault-thanhlam audit pipeline (promtail -> loki -> here).
+# No persistence here - dashboards/datasources are provisioned via ConfigMap
+# (below) on every start anyway, so a restart loses nothing but usage
+# history/annotations. Fine for a demo instance, not a decision tied to
+# platform/vault's own mode (that's standalone + persisted now).
+#
+# Admin password comes from Vault, not plaintext here: platform/vault-bootstrap
+# seeds secret/vault-thanhlam/grafana, and the VaultAuth/VaultStaticSecret in
+# extraObjects below (via Vault Secrets Operator, platform/vault-secrets-operator-thanhlam)
+# syncs it into the "grafana-admin" Secret this pod reads at startup.
+admin:
+  existingSecret: grafana-admin
+  userKey: admin-user
+  passwordKey: admin-password
+
+persistence:
+  enabled: false
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false" # TLS terminates at the Cloudflare Tunnel edge
+  hosts:
+    - grafana.thanhlam.online
+  path: /
+  pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        uid: loki
+        access: proxy
+        url: http://loki.vault-thanhlam.svc.cluster.local:3100
+        isDefault: true
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: default
+        orgId: 1
+        folder: ""
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+# Vault Secrets Operator wiring for the "grafana-admin" Secret above. Bound
+# to this pod's own ServiceAccount ("grafana", the chart's default name) in
+# this namespace - see platform/vault-bootstrap for the matching Vault-side
+# role/policy (re-applied every 5 minutes as a defensive self-heal, not
+# because Vault wipes state on restart anymore - see platform/vault-init).
+extraObjects:
+  - apiVersion: secrets.hashicorp.com/v1beta1
+    kind: VaultConnection
+    metadata:
+      name: vault-connection
+      namespace: vault-thanhlam
+    spec:
+      address: http://vault.vault-thanhlam.svc.cluster.local:8200
+  - apiVersion: secrets.hashicorp.com/v1beta1
+    kind: VaultAuth
+    metadata:
+      name: vault-auth-grafana
+      namespace: vault-thanhlam
+    spec:
+      vaultConnectionRef: vault-connection
+      method: kubernetes
+      mount: kubernetes
+      kubernetes:
+        role: vault-thanhlam-grafana
+        serviceAccount: grafana
+  - apiVersion: secrets.hashicorp.com/v1beta1
+    kind: VaultStaticSecret
+    metadata:
+      name: grafana-admin-vault
+      namespace: vault-thanhlam
+    spec:
+      vaultAuthRef: vault-auth-grafana
+      mount: secret
+      type: kv-v2
+      path: vault-thanhlam/grafana
+      refreshAfter: 60s
+      destination:
+        create: true
+        name: grafana-admin
+
+dashboards:
+  default:
+    vault-audit-log:
+      json: |
+        {
+          "title": "Vault Audit Log",
+          "uid": "vault-audit-log",
+          "schemaVersion": 39,
+          "timezone": "browser",
+          "time": { "from": "now-1h", "to": "now" },
+          "refresh": "30s",
+          "panels": [
+            {
+              "id": 1,
+              "type": "logs",
+              "title": "vault-thanhlam audit stream",
+              "gridPos": { "h": 20, "w": 24, "x": 0, "y": 0 },
+              "datasource": { "type": "loki", "uid": "loki" },
+              "options": {
+                "showTime": true,
+                "wrapLogMessage": true,
+                "sortOrder": "Descending"
+              },
+              "targets": [
+                {
+                  "refId": "A",
+                  "datasource": { "type": "loki", "uid": "loki" },
+                  "expr": "{namespace=\"vault-thanhlam\"}"
+                }
+              ]
+            }
+          ]
+        }

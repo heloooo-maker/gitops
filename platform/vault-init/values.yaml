@@ -1,0 +1,68 @@
+# platform/vault now auto-unseals via Transit (platform/vault-kms) on every
+# restart - no per-restart action needed. The only thing left to automate
+# is the ONE-TIME `vault operator init`, which only matters on this
+# Vault's very first boot ever (or if its PVC is ever lost). This CronJob
+# checks every 5 minutes; if uninitialized, runs init and stores the
+# resulting root token in the "vault-init" Secret. If already initialized,
+# does nothing - there's no seal state to react to anymore.
+# platform/vault-bootstrap reads the root token back out via
+# `secret:vault-init.root-token`.
+# Runs on the general chart (charts/general) as a CronJob-only app - no
+# Deployment, no Service.
+image:
+  repository: hashicorp/vault
+  tag: "1.18"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+deployments: []
+
+secrets:
+  enabled: false
+
+env:
+  VAULT_ADDR: http://vault.vault-thanhlam.svc.cluster.local:8200
+
+cronJobs:
+  - name: init
+    schedule: "*/5 * * * *"
+    command:
+      - /bin/sh
+      - -c
+    args:
+      - |
+        set -e
+        apk add --no-cache curl >/dev/null
+
+        STATUS=$(vault status 2>&1 || true)
+        INITIALIZED=$(echo "$STATUS" | awk '/^Initialized/ {print $2}')
+
+        if [ "$INITIALIZED" != "false" ]; then
+          echo "vault already initialized"
+          exit 0
+        fi
+
+        INIT_OUT=$(vault operator init)
+        ROOT_TOKEN=$(echo "$INIT_OUT" | awk -F': ' '/^Initial Root Token/ {print $2}')
+        ROOT_B64=$(printf '%s' "$ROOT_TOKEN" | base64 | tr -d '\n')
+        BODY=$(printf '{"apiVersion":"v1","kind":"Secret","type":"Opaque","metadata":{"name":"vault-init"},"data":{"root-token":"%s"}}' "$ROOT_B64")
+
+        curl -sf -X POST \
+          --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+          -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+          -H "Content-Type: application/json" \
+          -d "$BODY" \
+          "https://kubernetes.default.svc/api/v1/namespaces/vault-thanhlam/secrets" >/dev/null
+
+        echo "vault initialized (auto-unsealed via transit)"
+    resources:
+      requests:
+        cpu: 25m
+        memory: 48Mi
+      limits:
+        cpu: 150m
+        memory: 96Mi
+
+serviceAccount:
+  create: false

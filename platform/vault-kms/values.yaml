@@ -1,0 +1,17 @@
+# Standalone, file storage, real Shamir seal (1 key share - single operator,
+# same tradeoff as platform/vault used to make with its own unseal). No
+# injector, no UI needed (this Vault is a backend service, nobody logs into
+# it day-to-day) - init/unseal/bootstrap all happen via `kubectl exec` using
+# platform/vault-kms-bootstrap.sh, by hand, by design (see that file).
+server:
+  dev:
+    enabled: false
+  ha:
+    enabled: false
+  dataStorage:
+    enabled: true
+    size: 500Mi
+injector:
+  enabled: false
+ui:
+  enabled: false

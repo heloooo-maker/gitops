@@ -1,0 +1,13 @@
+# A second, separate Vault whose only job is to be the Transit auto-unseal
+# backend for platform/vault (see platform/vault/values.yaml's seal
+# "transit" block). Own namespace, own AppProject destination - this one is
+# deliberately NOT part of any self-healing automation (see
+# platform/vault-kms-bootstrap.sh): it should almost never restart, and when
+# it does, someone unseals it by hand with their own key (not stored in the
+# cluster). platform/vault, which restarts far more often as a normal
+# workload, then auto-unseals against this with zero manual steps.
+chart: vault
+repoURL: https://helm.releases.hashicorp.com
+targetRevision: "0.34.1"
+namespace: vault-kms-thanhlam
+project: platform

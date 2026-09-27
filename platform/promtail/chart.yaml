@@ -1,0 +1,12 @@
+# Promtail itself is in maintenance/EOL mode - Grafana's recommended
+# successor is Alloy (chart: grafana/alloy). Kept as Promtail here because
+# its config is a straight YAML pipeline (small, auditable) vs. Alloy's
+# River config language - revisit this choice if Promtail stops shipping
+# security patches. 6.17.1 is flagged `deprecated: true` upstream
+# (artifacthub/index.yaml, chart's final release); pinned one minor back
+# at 6.17.0, the newest non-deprecated version.
+chart: promtail
+repoURL: https://grafana.github.io/helm-charts
+targetRevision: "6.17.0"
+namespace: vault-thanhlam
+project: platform

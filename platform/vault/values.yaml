@@ -1,13 +1,50 @@
-# Dev mode: in-memory, auto-unseals, fixed root token "root".
-# Loses all data on pod restart - for learning/testing VSO only, never production.
+# Standalone mode (not dev): real "file" storage on a PVC. Auto-unseals via
+# Transit against platform/vault-kms (a separate Vault whose only job is to
+# be this one's KMS - see platform/vault-kms-bootstrap.sh for how the
+# transit key/token get created, by hand, once). That means this Vault
+# needs ZERO manual or scripted unseal step of its own on every restart -
+# unlike vault-kms, which stays real Shamir-sealed on purpose.
+# On its very first boot ever it's still uninitialized (auto-unseal doesn't
+# skip that) - see platform/vault-init for the one-time `vault operator
+# init` automation, and platform/vault-bootstrap for everything that needs
+# the resulting root token.
 server:
   dev:
-    enabled: true
-    devRootToken: "root"
+    enabled: false
   ha:
     enabled: false
   dataStorage:
-    enabled: false
+    enabled: true
+    size: 1Gi
+  # VAULT_SEAL_TRANSIT_TOKEN is interpolated into standalone.config below
+  # (Vault's HCL parser expands ${ENV_VAR} natively, no extra flag needed).
+  # This Secret is created by hand per platform/vault-kms-bootstrap.sh -
+  # doesn't exist until that's been run once.
+  extraSecretEnvironmentVars:
+    - envName: VAULT_SEAL_TRANSIT_TOKEN
+      secretName: vault-kms-transit-token
+      secretKey: token
+  # Same as the chart's own default standalone.config (ui + tcp listener +
+  # file storage), plus the seal "transit" block pointing at vault-kms.
+  standalone:
+    config: |
+      ui = true
+
+      listener "tcp" {
+        tls_disable = 1
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+      storage "file" {
+        path = "/vault/data"
+      }
+      seal "transit" {
+        address     = "http://vault-kms.vault-kms-thanhlam.svc.cluster.local:8200"
+        token       = "${VAULT_SEAL_TRANSIT_TOKEN}"
+        key_name    = "autounseal"
+        mount_path  = "transit/"
+        disable_renewal = "false"
+      }
 injector:
   enabled: false
 ui:

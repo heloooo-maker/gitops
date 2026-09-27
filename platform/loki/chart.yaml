@@ -1,0 +1,5 @@
+chart: loki
+repoURL: https://grafana.github.io/helm-charts
+targetRevision: "7.3.0"
+namespace: vault-thanhlam
+project: platform
