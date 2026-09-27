@@ -4,9 +4,11 @@
 # storage was ever wiped (PVC lost, or a brand new `vault operator init` -
 # see platform/vault-init). This CronJob re-applies it every 5 minutes
 # anyway as a cheap defensive self-heal:
-#   1. audit device -> stdout (platform/promtail ships it as a container log)
-#   2. kubernetes auth method + a read-only role for the Grafana pod
-#   3. the Grafana admin credential in KV (only written once - if the path
+#   1. the "secret/" KV-v2 engine itself - dev mode auto-mounts this, real
+#      standalone Vault starts with NO secret engines at all
+#   2. audit device -> stdout (platform/promtail ships it as a container log)
+#   3. kubernetes auth method + a read-only role for the Grafana pod
+#   4. the Grafana admin credential in KV (only written once - if the path
 #      already holds a value this leaves it alone, so a manually rotated
 #      password survives future runs)
 # VAULT_TOKEN reads the root token platform/vault-init generated at
@@ -44,6 +46,8 @@ cronJobs:
     args:
       - |
         set -e
+
+        vault secrets enable -path=secret kv-v2 || true
 
         vault audit enable file file_path=stdout || true
 
