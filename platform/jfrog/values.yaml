@@ -22,6 +22,16 @@
 # This chart wraps the full "artifactory" chart as a dependency — most keys
 # live one level down, under `artifactory:`.
 # (full reference: https://github.com/jfrog/charts/tree/master/stable/artifactory)
+
+# Mandatory since this chart version — Artifactory refuses to render without
+# a master key + join key. Read from a Secret created directly on the
+# cluster (kubectl), never in git: `kubectl create secret generic
+# artifactory-mandatory-keys -n lab-thanhlam --from-literal=master-key=...
+# --from-literal=join-key=...` (same pattern as Harbor's admin password).
+global:
+  masterKeySecretName: artifactory-mandatory-keys
+  joinKeySecretName: artifactory-mandatory-keys
+
 artifactory:
   nginx:
     enabled: false # ingress-nginx (already on the cluster) terminates instead, same pattern as every other platform/* component
