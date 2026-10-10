@@ -86,4 +86,12 @@ cat <<'EOF'
      platform-gitops/vault-bootstrap/values.yaml):
        vault kv put secret/cloudflared credentials.json=@<tunnel-id>.json
        vault kv put secret/image-updater-git username=argocd-image-updater password=<github PAT>
+
+=== EXPECTED, not a bug: 3 pods will sit in ImagePullBackOff ===
+  resoweb, freelance-agency-template, charts-repo all still reference
+  harbor-pull-secret / harbor.thanhlam.online (Harbor was retired, JFrog
+  never finished replacing it — see platform-gitops/jfrog/values.yaml).
+  Leave them red until JFrog is up and configured (login, create
+  docker-local/helm-local repos, create a token), then come back and
+  cut these 3 + image-updater over to it.
 EOF
