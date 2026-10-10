@@ -1,14 +1,13 @@
-# JFrog Container Registry (JCR) — replacing Harbor as the Docker + Helm OCI
-# registry. JCR is the free registry-only slice of the full Artifactory
-# chart, scoped to exactly what Harbor covered here (library/* image pushes
-# + the general chart's OCI package) — no universal-repo-manager features
-# we don't use.
+# JFrog Container Registry (JCR) — replaces Harbor (platform/harbor removed)
+# as the Docker + Helm OCI registry. JCR is the free registry-only slice of
+# the full Artifactory chart, scoped to exactly what Harbor covered here
+# (library/* image pushes + the general chart's OCI package) — no
+# universal-repo-manager features we don't use.
 #
-# Deployed ALONGSIDE platform/harbor (not yet removed): downstream consumers
-# (charts-repo, image-updater, app/development/*, the chart-publish CI
-# workflow) still point at harbor.thanhlam.online. Cut them over to
-# jfrog.thanhlam.online once this is verified up, and only then delete
-# platform/harbor and its PVCs.
+# NOTE: Harbor was removed before this cutover was finished. Until the
+# manual steps below are done AND charts-repo/image-updater/app-development/*
+# values + the chart-publish CI workflow are updated from harbor.thanhlam.online
+# to jfrog.thanhlam.online, those consumers cannot pull/push images.
 #
 # Manual one-time steps after first sync (can't be done from git):
 #   1. Log in at https://jfrog.thanhlam.online with the default admin/password
