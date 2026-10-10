@@ -1,5 +1,0 @@
-chart: vault-secrets-operator
-repoURL: https://helm.releases.hashicorp.com
-targetRevision: "1.6.0"
-namespace: vault-secrets-operator-thanhlam
-project: platform
