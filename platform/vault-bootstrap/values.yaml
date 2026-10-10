@@ -70,6 +70,50 @@ cronJobs:
           PASSWORD=$(head -c18 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c20)
           vault kv put secret/vault-thanhlam/grafana admin-user=admin admin-password="$PASSWORD"
         fi
+
+        # lab-thanhlam-demo: formalizes a role that previously only existed
+        # as an ad hoc `vault write` (see app/development/vault-auth.yaml,
+        # still applied by hand — only the policy/role content moved here).
+        # Shared by every app in lab-thanhlam that runs as that namespace's
+        # default ServiceAccount (resoweb, freelance-agency-template, jfrog)
+        # — not per-app isolated like vault-thanhlam-grafana above, matching
+        # how this namespace was already set up.
+        vault policy write lab-thanhlam-demo - <<'EOF'
+        path "secret/data/resoweb" {
+          capabilities = ["read"]
+        }
+        path "secret/data/freelance-agency-template" {
+          capabilities = ["read"]
+        }
+        path "secret/data/jfrog" {
+          capabilities = ["read"]
+        }
+        EOF
+
+        vault write auth/kubernetes/role/lab-thanhlam-demo \
+          bound_service_account_names=default \
+          bound_service_account_namespaces=lab-thanhlam \
+          policies=lab-thanhlam-demo \
+          ttl=1h
+
+        # JFrog's master/join keys (see platform/jfrog/values.yaml,
+        # global.masterKeySecretName/joinKeySecretName) - generated once,
+        # same "only if missing" pattern as the Grafana password above, so a
+        # manually rotated value survives future runs and Vault's own
+        # storage is the only place either key is ever written down. NOT
+        # auto-rotated: Artifactory treats the master key as fixed
+        # post-install (it encrypts on-disk config), so a changed value
+        # here would NOT get re-read live - this only matters for disaster
+        # recovery / re-seeding a fresh Vault before first boot.
+        if ! vault kv get secret/jfrog >/dev/null 2>&1; then
+          # No openssl in this image (confirmed) - same /dev/urandom+base64
+          # approach as the Grafana password above, just longer. Artifactory
+          # only needs a sufficiently long random string here, not strictly
+          # hex.
+          MASTER_KEY=$(head -c48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c48)
+          JOIN_KEY=$(head -c48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c48)
+          vault kv put secret/jfrog master-key="$MASTER_KEY" join-key="$JOIN_KEY"
+        fi
     resources:
       requests:
         cpu: 10m
