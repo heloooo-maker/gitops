@@ -1,12 +1,19 @@
-# Application "root" is the app-of-apps entry point. AppProject/ApplicationSet
-# files live co-located with what they manage (app/development/ here,
-# platform-gitops' own root for platform/*) — matching truedoc's convention
-# where appset-<env>.yaml sits inside truedoc/<env>/ next to the apps
-# themselves.
-# `include` (allow-list) is used instead of `exclude` here on purpose: each
-# source recurses its WHOLE repo, and an allow-list means a mistake just
-# misses a new file rather than crashing on some unrelated values.yaml/chart
-# template.
+# Application "root" is the app-of-apps entry point.
+#
+# Each source points at a dedicated `bootstrap/` folder (one per repo) that
+# contains ONLY things meant to be applied directly by root — AppProjects,
+# ApplicationSets, one-off RBAC. No include/exclude filter needed: since the
+# folder holds nothing else, a plain recurse is safe (no risk of root
+# choking on an unrelated values.yaml/chart.yaml template sitting next to
+# these files, the way it would if this recursed the whole repo).
+#
+# This trades away literal co-location (an ApplicationSet used to sit right
+# next to the folder it manages, e.g. platform/appset-utilities.yaml beside
+# platform/cloudflared/) for a bootstrap source that never has to be
+# maintained as a hand-written file list. Worth it once there's more than a
+# couple of these per repo - see the include-string version this replaced
+# in git history if you want to compare.
+#
 # Sync policy is manual on purpose so bootstrap/project/appset changes can be reviewed first.
 #
 # Two sources since the 2026-10-10 repo split (was a single-repo monorepo
@@ -14,11 +21,11 @@
 # heloooo-maker/platform-gitops owns everything under what used to be
 # platform/ here.
 #
-# platform-gitops/jfrog/vault-wiring.yaml is deliberately NOT in either
-# include list — the AppProject "platform" (this Application's own project)
-# doesn't whitelist the lab-thanhlam destination that file targets (kept
-# separate from app-development on purpose), so it's applied by hand once
-# with `kubectl apply -f`, same as app/development/vault-auth.yaml below.
+# platform-gitops/jfrog/vault-wiring.yaml deliberately does NOT live under
+# either bootstrap/ folder — the AppProject "platform" (this Application's
+# own project) doesn't whitelist the lab-thanhlam destination that file
+# targets (kept separate from app-development on purpose), so it's applied
+# by hand once with `kubectl apply -f`, same as app/development/vault-auth.yaml.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -29,16 +36,14 @@ spec:
   sources:
     - repoURL: https://github.com/heloooo-maker/gitops.git
       targetRevision: main
-      path: "."
+      path: bootstrap
       directory:
         recurse: true
-        include: "{app/development/appproject.yaml,app/development/appset.yaml}"
     - repoURL: https://github.com/heloooo-maker/platform-gitops.git
       targetRevision: main
-      path: "."
+      path: bootstrap
       directory:
         recurse: true
-        include: "{appproject.yaml,appset-utilities.yaml,appset-repo-charts.yaml,vault-init-rbac.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd-thanhlam
