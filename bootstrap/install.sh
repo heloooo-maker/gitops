@@ -71,19 +71,39 @@ EOF
 read -r _
 
 echo "=== 4/4: Apply root (app-of-apps) and sync it ==="
+echo "    NOTE - first-ever bootstrap only: root's bootstrap/ content targets"
+echo "    vault-thanhlam and tunnel-system before anything else creates them"
+echo "    (platform-utilities/platform-repo-charts use CreateNamespace=true,"
+echo "    but only for THEIR OWN destination, not for namespaces referenced"
+echo "    by root's own raw manifests). Discovered 2026-10-10: pre-create"
+echo "    both or this sync fails with 'namespace not found'."
+kubectl create namespace vault-thanhlam --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace tunnel-system --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f "$GITOPS_DIR/bootstrap/root-application.yaml"
 argocd app sync root
 
 cat <<'EOF'
 
 === Bootstrap done. Still needed by hand (cannot go through Vault/GitOps): ===
-  1. platform-kms: `sh platform-gitops/vault-kms-bootstrap.sh` steps 1-6
+  1. vault-kms: `sh platform-gitops/vault-kms-bootstrap.sh` steps 1-6
      (init/unseal vault-kms, create the transit autounseal key + token)
   2. kubectl create secret generic vault-kms-transit-token -n vault-thanhlam \
        --from-literal=token=<client_token from vault-kms-bootstrap.sh step 6>
-  3. Once platform/vault is up and auto-unsealed, seed the secrets Vault
-     itself cannot generate (see each one's comment in
-     platform-gitops/vault-bootstrap/values.yaml):
+  3. Once platform/vault is up and auto-unsealed: `vault operator init` on
+     it, BY HAND (no CronJob does this anymore - see platform/vault/
+     values.yaml's comment for why). Keep the root token only long enough
+     to run the next step, then revoke it.
+  4. sh platform-gitops/vault-config-operator-bootstrap.sh (uses that root
+     token once, to create the narrowly-scoped role every CR in
+     bootstrap/vault-config-operator-crs.yaml authenticates as - then the
+     root token gets revoked and is never needed again)
+  5. ArgoCD picks up bootstrap/vault-config-operator-crs.yaml on its own
+     from here - policies, roles, the audit device, and the JFrog/Grafana
+     RandomSecrets all reconcile automatically, no more manual
+     `vault kv put` for those. Only genuinely external credentials still
+     need seeding by hand (see each one's comment in
+     platform-gitops/cloudflared/values.yaml and
+     platform-gitops/bootstrap/vault-auth-argocd-thanhlam.yaml):
        vault kv put secret/cloudflared credentials.json=@<tunnel-id>.json
        vault kv put secret/image-updater-git username=argocd-image-updater password=<github PAT>
 
