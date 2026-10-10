@@ -1,0 +1,61 @@
+# JFrog Container Registry (JCR) — replacing Harbor as the Docker + Helm OCI
+# registry. JCR is the free registry-only slice of the full Artifactory
+# chart, scoped to exactly what Harbor covered here (library/* image pushes
+# + the general chart's OCI package) — no universal-repo-manager features
+# we don't use.
+#
+# Deployed ALONGSIDE platform/harbor (not yet removed): downstream consumers
+# (charts-repo, image-updater, app/development/*, the chart-publish CI
+# workflow) still point at harbor.thanhlam.online. Cut them over to
+# jfrog.thanhlam.online once this is verified up, and only then delete
+# platform/harbor and its PVCs.
+#
+# Manual one-time steps after first sync (can't be done from git):
+#   1. Log in at https://jfrog.thanhlam.online with the default admin/password
+#      and set a real admin password.
+#   2. Create local repositories for what Harbor served as "library" —
+#      a Docker repo (e.g. "docker-local") and a Helm repo (e.g.
+#      "helm-local") — via the UI or REST API. Unlike Harbor, JCR has no
+#      built-in default project/repo.
+#   3. Create an access token / pull-secret-worthy user for
+#      argocd-image-updater and the cluster's image pull secret.
+#
+# This chart wraps the full "artifactory" chart as a dependency — most keys
+# live one level down, under `artifactory:`.
+# (full reference: https://github.com/jfrog/charts/tree/master/stable/artifactory)
+artifactory:
+  nginx:
+    enabled: false # ingress-nginx (already on the cluster) terminates instead, same pattern as every other platform/* component
+
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - jfrog.thanhlam.online
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "false" # TLS terminates at the Cloudflare Tunnel edge, not here
+      nginx.ingress.kubernetes.io/proxy-body-size: "0" # unbounded — needed for large image layer pushes
+
+  artifactory:
+    # Homelab, single node pool, replacing a Harbor that was running fine on
+    # similar resources — not sized for production load.
+    resources:
+      requests:
+        cpu: 250m
+        memory: 1Gi
+      limits:
+        cpu: "1"
+        memory: 3Gi
+    javaOpts:
+      xms: "512m"
+      xmx: "2g" # chart requires resources.limits.memory to stay >=1Gi above xmx
+
+    persistence:
+      size: 20Gi # matches Harbor's registry PVC
+      storageClassName: local-path
+
+  postgresql:
+    enabled: true
+    primary:
+      persistence:
+        size: 5Gi # matches Harbor's database PVC; default chart size (200Gi) is way oversized for a homelab
