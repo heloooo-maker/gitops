@@ -107,11 +107,16 @@ cat <<'EOF'
        vault kv put secret/cloudflared credentials.json=@<tunnel-id>.json
        vault kv put secret/image-updater-git username=argocd-image-updater password=<github PAT>
 
-=== EXPECTED, not a bug: 3 pods will sit in ImagePullBackOff ===
-  resoweb, freelance-agency-template, charts-repo all still reference
-  harbor-pull-secret / harbor.thanhlam.online (Harbor was retired, JFrog
-  never finished replacing it — see platform-gitops/jfrog/values.yaml).
-  Leave them red until JFrog is up and configured (login, create
-  docker-local/helm-local repos, create a token), then come back and
-  cut these 3 + image-updater over to it.
+=== RESOLVED 2026-10-25: cut over to JFrog ===
+  resoweb, freelance-agency-template, charts-repo, image-updater and
+  app/development/grocery-marketplace-* all now reference
+  jfrog-pull-secret / jfrog.thanhlam.online/docker-local (Harbor's old
+  harbor-pull-secret / harbor.thanhlam.online references are gone).
+  JFrog itself had a separate, unrelated bug that looked like it was
+  never bootstrapped: a 14-day crash loop caused by Argo CD re-rolling
+  its Postgres password and Vault master key on every sync while
+  Postgres only applies them once at initdb — see the pinned
+  postgresql.auth values and comment in platform-gitops/jfrog/values.yaml.
+  `kubectl create secret docker-registry jfrog-pull-secret -n lab-thanhlam`
+  was created by hand from the admin token (not Vault-managed yet).
 EOF

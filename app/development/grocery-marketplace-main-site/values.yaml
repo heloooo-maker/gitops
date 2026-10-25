@@ -6,12 +6,12 @@
 # Dockerfile/image exists yet, and VITE_API_URL is a build-time value CI must set, not a runtime
 # env var here.
 image:
-  repository: harbor.thanhlam.online/library/grocery-marketplace-main-site
+  repository: jfrog.thanhlam.online/docker-local/grocery-marketplace-main-site
   tag: 800ebe728838febf444b045213514393c1051434
   pullPolicy: IfNotPresent
 
 imagePullSecrets:
-  - name: harbor-pull-secret
+  - name: jfrog-pull-secret
 
 serviceAccount:
   create: false

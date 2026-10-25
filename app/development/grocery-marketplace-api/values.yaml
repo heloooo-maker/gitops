@@ -18,12 +18,12 @@
 #      Postgres/Redis/Kafka locally; here it should reuse the shared postgres-thanhlam instance,
 #      same pattern as platform-gitops/postgres, once that's set up).
 image:
-  repository: harbor.thanhlam.online/library/grocery-marketplace-api
+  repository: jfrog.thanhlam.online/docker-local/grocery-marketplace-api
   tag: 84635ae42bd6d2856c7595e19ebc904b32c90821
   pullPolicy: IfNotPresent
 
 imagePullSecrets:
-  - name: harbor-pull-secret
+  - name: jfrog-pull-secret
 
 serviceAccount:
   create: false

@@ -11,12 +11,12 @@
 #      the api ingress host ends up being) when the Dockerfile's build stage runs, in CI. Setting
 #      an `env:` here would have no effect on an already-built nginx image.
 image:
-  repository: harbor.thanhlam.online/library/grocery-marketplace-dashboard
+  repository: jfrog.thanhlam.online/docker-local/grocery-marketplace-dashboard
   tag: 10e9cdc9a307b84efac03cbfbe325a77ecc06a2e
   pullPolicy: IfNotPresent
 
 imagePullSecrets:
-  - name: harbor-pull-secret
+  - name: jfrog-pull-secret
 
 serviceAccount:
   create: false

@@ -2,12 +2,12 @@
 # build step). Rendered from the shared "general" chart, same pattern as
 # freelance-agency-template, image on Harbor instead of the old registry:2.
 image:
-  repository: harbor.thanhlam.online/library/resoweb
+  repository: jfrog.thanhlam.online/docker-local/resoweb
   tag: 9e0d8c96193fce489f28fb0ea9cfb80c9fe16cca
   pullPolicy: IfNotPresent
 
 imagePullSecrets:
-  - name: harbor-pull-secret
+  - name: jfrog-pull-secret
 
 serviceAccount:
   create: false
