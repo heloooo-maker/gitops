@@ -21,7 +21,7 @@
 #   platform-gitops is a PRIVATE repo, and root's very first sync needs to
 #   read it before Vault/Vault Secrets Operator exist to do that for any
 #   other secret. Register it with ArgoCD by hand once:
-#     argocd repo add https://github.com/heloooo-maker/platform-gitops.git \
+#     argocd repo add https://github.com/thanhlamcode/platform-gitops.git \
 #       --username <github-username> --password <github PAT, repo scope>
 #   (needs `argocd login` against the ArgoCD this script installs below —
 #   do that first, or run this via `kubectl exec` against the repo-server
@@ -35,7 +35,7 @@ PLATFORM_DIR="$DEVOPS_DIR/platform-gitops"
 
 if [ ! -d "$PLATFORM_DIR" ]; then
   echo "Expected platform-gitops checked out at $PLATFORM_DIR - clone it first:"
-  echo "  git clone https://github.com/heloooo-maker/platform-gitops.git $PLATFORM_DIR"
+  echo "  git clone https://github.com/thanhlamcode/platform-gitops.git $PLATFORM_DIR"
   exit 1
 fi
 
@@ -57,11 +57,11 @@ kubectl apply -f "$PLATFORM_DIR/bootstrap/appproject.yaml"
 cat <<'EOF'
 
 === PAUSE: register the private platform-gitops repo with ArgoCD ===
-root's first sync needs to read heloooo-maker/platform-gitops (private),
+root's first sync needs to read thanhlamcode/platform-gitops (private),
 before Vault/VSO exist to do that any other way. If you haven't already:
 
   argocd login argocd.thanhlam.online   # or: kubectl -n argocd-thanhlam port-forward svc/argocd-thanhlam-server 8080:443
-  argocd repo add https://github.com/heloooo-maker/platform-gitops.git \
+  argocd repo add https://github.com/thanhlamcode/platform-gitops.git \
     --username <github-username> --password <github PAT, repo scope>
 
 Press Enter once that's done to continue, or Ctrl+C to do it later and

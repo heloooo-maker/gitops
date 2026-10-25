@@ -1,0 +1,51 @@
+# grocery-marketplace admin dashboard — React SPA (TanStack Router/Query), served as a prebuilt
+# static bundle by nginx. Built from https://github.com/thanhlamcode/grocery-marketplace-dashboard.
+# Rendered from the shared "general" chart, same pattern as resoweb.
+#
+# DRAFT — not pushed yet:
+#   1. No Dockerfile exists for this repo yet (the original monorepo never had one for either
+#      frontend — only the api/ side did) and no image has been pushed to Harbor. `tag` below is
+#      the current local HEAD commit SHA as a placeholder.
+#   2. The API base URL (VITE_API_URL) is a Vite BUILD-time value baked into the static bundle,
+#      not a runtime env var — it must point at https://grocery-api.thanhlam.online (or whatever
+#      the api ingress host ends up being) when the Dockerfile's build stage runs, in CI. Setting
+#      an `env:` here would have no effect on an already-built nginx image.
+image:
+  repository: harbor.thanhlam.online/library/grocery-marketplace-dashboard
+  tag: 10e9cdc9a307b84efac03cbfbe325a77ecc06a2e
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: harbor-pull-secret
+
+serviceAccount:
+  create: false
+
+secrets:
+  enabled: false
+
+deployments:
+  - name: dashboard
+    replicasCount: 1
+    service:
+      name: grocery-marketplace-dashboard
+      port: 80
+      containerPort: 80
+      healthType: http
+      health:
+        live: /
+        ready: /
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  tls: []
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  rules:
+    - host: grocery-admin.thanhlam.online
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: grocery-marketplace-dashboard
+          servicePort: 80

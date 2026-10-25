@@ -14,7 +14,7 @@ spec:
     - git:
         directories:
           - path: app/development/*
-        repoURL: https://github.com/heloooo-maker/gitops.git
+        repoURL: https://github.com/thanhlamcode/gitops.git
         revision: main
   ignoreApplicationDifferences:
     - jqPathExpressions:
@@ -33,7 +33,7 @@ spec:
         argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd-thanhlam/repo-gitops
         argocd-image-updater.argoproj.io/write-back-target: helmvalues:/app/development/{{path.basename}}/values.yaml
         argocd-image-updater.argoproj.io/git-branch: main
-        argocd-image-updater.argoproj.io/git-repository: https://github.com/heloooo-maker/gitops.git
+        argocd-image-updater.argoproj.io/git-repository: https://github.com/thanhlamcode/gitops.git
     spec:
       project: app-development
       destination:
@@ -52,7 +52,7 @@ spec:
             valueFiles:
               - $values/app/development/{{path.basename}}/values.yaml
         - ref: values
-          repoURL: https://github.com/heloooo-maker/gitops.git
+          repoURL: https://github.com/thanhlamcode/gitops.git
           targetRevision: main
       syncPolicy:
         automated:

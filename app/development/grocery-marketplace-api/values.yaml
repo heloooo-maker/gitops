@@ -1,0 +1,60 @@
+# grocery-marketplace API (Symfony + API Platform, FrankenPHP) — built from the standalone split
+# repo https://github.com/thanhlamcode/grocery-marketplace-api (the api/ subfolder of the original
+# grocery-marketplace monorepo, kept in sync via `git subtree split` + force-push). Rendered from
+# the shared "general" chart, same pattern as resoweb/postgres.
+#
+# DRAFT — not pushed yet, several real open questions before this can actually serve traffic:
+#   1. No image exists in Harbor yet (CI workflow not written). `tag` below is the current local
+#      HEAD commit SHA as a placeholder so this file matches the expected
+#      `regexp:^[0-9a-f]{40}$` tag shape Image Updater wants — it will 404/ImagePullBackOff until
+#      CI actually pushes that tag.
+#   2. FrankenPHP's Caddyfile currently serves HTTPS-only (auto-TLS) on port 443 with no plain-HTTP
+#      vhost — doesn't match this cluster's pattern of TLS terminating at the Cloudflare Tunnel
+#      edge (ingress-nginx -> pod is always plain HTTP, see platform-gitops/cloudflared and
+#      resoweb's own ingress.tls: [] comment). Caddyfile needs a follow-up change for this to
+#      actually work behind this ingress.
+#   3. `secrets`/`vaultSecret` left disabled below — nothing to wire in yet, since Postgres/Redis/
+#      Kafka don't exist on this cluster yet (grocery-marketplace used its own docker-compose
+#      Postgres/Redis/Kafka locally; here it should reuse the shared postgres-thanhlam instance,
+#      same pattern as platform-gitops/postgres, once that's set up).
+image:
+  repository: harbor.thanhlam.online/library/grocery-marketplace-api
+  tag: 84635ae42bd6d2856c7595e19ebc904b32c90821
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: harbor-pull-secret
+
+serviceAccount:
+  create: false
+
+secrets:
+  enabled: false
+
+deployments:
+  - name: api
+    # Not higher than 1 yet: Mercure (live order tracking / admin notifications) has no shared
+    # transport configured, so each replica would run its own isolated in-memory hub — a
+    # subscriber connected to replica A would never see a publish that landed on replica B.
+    replicasCount: 1
+    service:
+      name: grocery-marketplace-api
+      port: 80
+      containerPort: 80
+      # tcp, not http: see open question #2 above — no plain-HTTP path to probe yet.
+      healthType: "tcp"
+      health: {}
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  tls: [] # TLS terminates at the Cloudflare Tunnel edge, not here (same as resoweb)
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  rules:
+    - host: grocery-api.thanhlam.online
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: grocery-marketplace-api
+          servicePort: 80

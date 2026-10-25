@@ -1,0 +1,46 @@
+# grocery-marketplace storefront — React SPA (TanStack Router/Query), served as a prebuilt static
+# bundle by nginx. Built from https://github.com/thanhlamcode/grocery-marketplace-main-site.
+# Rendered from the shared "general" chart, same pattern as resoweb.
+#
+# DRAFT — not pushed yet, same two open items as grocery-marketplace-dashboard/values.yaml: no
+# Dockerfile/image exists yet, and VITE_API_URL is a build-time value CI must set, not a runtime
+# env var here.
+image:
+  repository: harbor.thanhlam.online/library/grocery-marketplace-main-site
+  tag: 800ebe728838febf444b045213514393c1051434
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: harbor-pull-secret
+
+serviceAccount:
+  create: false
+
+secrets:
+  enabled: false
+
+deployments:
+  - name: main-site
+    replicasCount: 1
+    service:
+      name: grocery-marketplace-main-site
+      port: 80
+      containerPort: 80
+      healthType: http
+      health:
+        live: /
+        ready: /
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  tls: []
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  rules:
+    - host: grocery.thanhlam.online
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: grocery-marketplace-main-site
+          servicePort: 80

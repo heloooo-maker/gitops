@@ -34,12 +34,12 @@ metadata:
 spec:
   project: platform
   sources:
-    - repoURL: https://github.com/heloooo-maker/gitops.git
+    - repoURL: https://github.com/thanhlamcode/gitops.git
       targetRevision: main
       path: bootstrap
       directory:
         recurse: true
-    - repoURL: https://github.com/heloooo-maker/platform-gitops.git
+    - repoURL: https://github.com/thanhlamcode/platform-gitops.git
       targetRevision: main
       path: bootstrap
       directory:
